@@ -1,0 +1,179 @@
+The algorithm itself is necessarily wrong, like the map matching algorithm is what the map matching algorithm needs to be, but the decisions that it makes that stuff all will need to be revised. So you need to do a match between Victoria Map and OSM and that algorithm. We've probably cooked that overcooked.
+
+McCusker, Stuart
+0 minutes 15 seconds0:15
+McCusker, Stuart 0 minutes 15 seconds
+Yeah.
+
+De Keukelaere, Frederik
+0 minutes 22 seconds0:22
+De Keukelaere, Frederik 0 minutes 22 seconds
+Down every single time to make sure that that thing does exactly what it's needing to do. But then once you've got this sort of match and match accuracy with it, what do you decide? Does this actually match, or does it not match? And does it inherit this attribute? Does it not inherit the way I've read the requirements is that.
+De Keukelaere, Frederik 0 minutes 42 seconds
+The whole logic we need to rethink and potentially redo so you know well, Cody that that's pretty much the heart of where the complication starts that now we'll have to, we'll have to unravel. Still you hit the nail on the head there that we need to make sure that.
+
+Lewis, Cody
+0 minutes 56 seconds0:56
+Lewis, Cody 0 minutes 56 seconds
+Yeah.
+
+De Keukelaere, Frederik
+1 minute 2 seconds1:02
+De Keukelaere, Frederik 1 minute 2 seconds
+That is maintainable and that we write the steps and the decision making in such a way that when DTP wants that tuned or modified, it's not buried deep in the matching algorithm and impossible to go and modify.
+De Keukelaere, Frederik 1 minute 21 seconds
+So that's that's another challenge. We had this the solution was written well for its purpose, but as soon as DTP changed the requirements, making a tiny modification to one of the decisions.
+De Keukelaere, Frederik 1 minute 36 seconds
+Had knock on effects throughout the whole map and that was extremely hard to control. So in the new version that we create, we have to think about how how do we go and do that the the other thing you asked thought about.
+De Keukelaere, Frederik 1 minute 53 seconds
+How can we deliver this with what I'm seeing in this requirements to I'm I'm leaning towards we need a dedicated team to go and do this for at least a couple of months to take it into a first iteration or whatever else and and and get get going I think if.
+De Keukelaere, Frederik 2 minutes 13 seconds
+If we gotta do this week.
+
+De Keukelaere, Frederik
+23 minutes 30 seconds23:30
+De Keukelaere, Frederik 23 minutes 30 seconds
+And and then once you've got that, I reckon we do a deep dive session like where I kind of share my concerns of what doesn't really work well with the solution when we were trying to tune and maintain it so that you wrap your head around how you would go about redesigning it.
+
+Shah, Feroze Ali
+23 minutes 30 seconds23:30
+Shah, Feroze Ali 23 minutes 30 seconds
+None.
+Shah, Feroze Ali 23 minutes 39 seconds
+Yeah.
+Shah, Feroze Ali 23 minutes 43 seconds
+Mm-hmm.
+Shah, Feroze Ali 23 minutes 47 seconds
+Yeah, yeah, yeah, yeah, certainly. I'll, I'll probably deep dive with Cody on the code, but I was just wondering if there is, if there are any. Sorry.
+
+De Keukelaere, Frederik
+23 minutes 48 seconds23:48
+De Keukelaere, Frederik 23 minutes 48 seconds
+Then.
+
+McCusker, Stuart
+23 minutes 55 seconds23:55
+McCusker, Stuart 23 minutes 55 seconds
+All.
+McCusker, Stuart 23 minutes 57 seconds
+We don't. We lost all our confluence access that, that, that.
+
+De Keukelaere, Frederik
+23 minutes 59 seconds23:59
+De Keukelaere, Frederik 23 minutes 59 seconds
+Oh yeah, we can get it all back for you. Yeah, there's there's confluence documentation meant that Cody and Aaron wrote there's there's hundreds of pages about the solution you need to raise a ticket and we'll get that to everyone here to get that access restored. Steph manages that.
+
+McCusker, Stuart
+24 minutes 3 seconds24:03
+McCusker, Stuart 24 minutes 3 seconds
+Yeah.
+
+Shah, Feroze Ali
+24 minutes 5 seconds24:05
+Shah, Feroze Ali 24 minutes 5 seconds
+Tell me.
+Shah, Feroze Ali 24 minutes 12 seconds
+Mm-hmm.
+
+De Keukelaere, Frederik
+24 minutes 19 seconds24:19
+De Keukelaere, Frederik 24 minutes 19 seconds
+Ticket approval thing and then Pavitra is actually the one that gives you all of the access, if I'm not mistaken. So we'll get, we'll get that arranged for you shortly. The same with the source code access. We'll we'll just get you fully onboarded. So you can access.
+
+Shah, Feroze Ali
+24 minutes 29 seconds24:29
+Shah, Feroze Ali 24 minutes 29 seconds
+No.
+Shah, Feroze Ali 24 minutes 32 seconds
+Eric, OK.
+
+De Keukelaere, Frederik
+24 minutes 36 seconds24:36
+De Keukelaere, Frederik 24 minutes 36 seconds
+The dev environment can see what's going on in there.
+
+Shah, Feroze Ali
+24 minutes 39 seconds24:39
+Shah, Feroze Ali 24 minutes 39 seconds
+Yep.
+
+De Keukelaere, Frederik
+24 minutes 40 seconds24:40
+De Keukelaere, Frederik 24 minutes 40 seconds
+Stuart was thinking for someone like a Richard Chang from a software development perspective to to get his his eyes on this as well. How he would go about designing this thing and he spent a lot.
+
+McCusker, Stuart
+24 minutes 54 seconds24:54
+McCusker, Stuart 24 minutes 54 seconds
+I don't know, Richard, but yet bye.
+
+De Keukelaere, Frederik
+24 minutes 57 seconds24:57
+De Keukelaere, Frederik 24 minutes 57 seconds
+He spent a tonne of time in OR he built rid so he knows what sits there. He's working for a mall right now. We don't lie. So I reckon we want to. We want for rose not to be up there on his own, trying to crack it all.
+
+McCusker, Stuart
+24 minutes 59 seconds24:59
+McCusker, Stuart 24 minutes 59 seconds
+OK.
+
+De Keukelaere, Frederik
+25 minutes 12 seconds25:12
+De Keukelaere, Frederik 25 minutes 12 seconds
+You want someone that he can that he can bounce ideas off and a thing between Richard, myself and and you for Roseville will crack. How we could redesign this without burning dollars too much, right?
+De Keukelaere, Frederik 25 minutes 28 seconds
+We still have to protect that they made us build this originally and and now we need to modify it quite substantially, but we should do it smart so that not everything that Aaron and Cody have built has to be redone. We want to use as much what these guys have built before.
+
+McCusker, Stuart
+25 minutes 28 seconds25:28
+McCusker, Stuart 25 minutes 28 seconds
+Yeah.
+McCusker, Stuart 25 minutes 49 seconds
+All right, let me go chat to Molan. Richard, that's that's good steer. Thank you. Right, guys.
+
+De Keukelaere, Frederik
+25 minutes 53 seconds25:53
+De Keukelaere, Frederik 25 minutes 53 seconds
+Yeah, I think it'd be nice just to to have his thoughts. He's he's designed lots and lots of things, so it'd be good to have him now for us. You might be as good, if not better than Richard. Who knows? We'll find out. So. But an extra 1 always works well.
+
+Shah, Feroze Ali
+26 minutes 7 seconds26:07
+Shah, Feroze Ali 26 minutes 7 seconds
+No.
+Shah, Feroze Ali 26 minutes 10 seconds
+Yeah, definitely. Sure.
+
+De Keukelaere, Frederik
+26 minutes 13 seconds26:13
+De Keukelaere, Frederik 26 minutes 13 seconds
+All right, man. And let's get you access to everything and then grab my time later this week so I can give you a brief on everything that I've been thinking about as well. I've spent a lot of time in that code, so hopefully that'll be helpful to you.
+
+Shah, Feroze Ali
+26 minutes 29 seconds26:29
+Shah, Feroze Ali 26 minutes 29 seconds
+Awesome.
+
+De Keukelaere, Frederik
+26 minutes 29 seconds26:29
+De Keukelaere, Frederik 26 minutes 29 seconds
+And between this this group, I think we've got a good starting point.
+
+McCusker, Stuart
+26 minutes 37 seconds26:37
+McCusker, Stuart 26 minutes 37 seconds
+Spectacular. All right, let's break there. Thank you, guys. Any other question? Any other questions? Any other comments before we break?
+
+Shah, Feroze Ali
+26 minutes 37 seconds26:37
+Shah, Feroze Ali 26 minutes 37 seconds
+Thank you.
+
+De Keukelaere, Frederik
+26 minutes 47 seconds26:47
+De Keukelaere, Frederik 26 minutes 47 seconds
+I.
+
+McCusker, Stuart
+26 minutes 48 seconds26:48
+McCusker, Stuart 26 minutes 48 seconds
+Awesome. Thank you guys. We'll chat soon. For those credit, I might just ping you guys and maybe jump a super quick call if I can. With you just on next steps as well.
