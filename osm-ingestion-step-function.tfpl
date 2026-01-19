@@ -1,0 +1,58 @@
+// Terraform configuration file for AWS Step Function used in OSM (OpenStreetMap) data ingestion pipeline
+// This template was shown by cody during the osm ingestion walkthrough as a reference implementation for orchestrating the OSM ingestion workflow
+# this was the teraform template for step function for OSM ingestion which cody showed to me
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapEditor - Update Changeset Status",
+  "Next": "Lambda - Initiate Job - MapEditor - Update Changeset Status"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapEditor - Check Changeset Status",
+  "Next": "Lambda - Initiate Job - MapEditor - Check Changeset Status"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapEditor - Source Update Publish Changeset",
+  "Next": "Lambda - Initiate Job - MapEditor - Source Update Publish Changeset"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapEditor - Update Changeset Status Post Approval",
+  "Next": "Lambda - Initiate Job - MapEditor - Update Changeset Status Post Approval"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table Post Published",
+  "Next": "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table Post Published"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapMatcher - Run Matching",
+  "Next": "Lambda - Initiate Job - MapMatcher - Run Matching"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapMatcher - Invalidate Previous OSM Relationships",
+  "Next": "Lambda - Initiate Job - MapMatcher - Invalidate Previous OSM Relationships"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Post Ingestion",
+  "Next": "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Post Ingestion"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapMatcher - Create Derived Layer",
+  "Next": "Lambda - Initiate Job - MapMatcher - Create Derived Layer"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapMatcher - Copy Unbroken OSM Data",
+  "Next": "Lambda - Initiate Job - MapMatcher - Copy Unbroken OSM Data"
+},
+{
+  "Variable": "$.resume_from",
+  "StringEquals": "Lambda - Initiate Job - MapMatcher - Delta Persistence",
+  "Next": "Lambda - Initiate Job - MapMatcher - Delta Persistence"
+},
