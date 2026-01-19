@@ -1,0 +1,681 @@
+{
+  "Comment": "Bulk Edit Ingestion Step Function",
+  "StartAt": "Choice - Check Input",
+  "States": {
+    "Choice - Check Input": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.resume_from",
+          "IsPresent": true,
+          "Next": "Choice - Resume From"
+        }
+      ],
+      "Default": "LoadDefaults"
+    },
+    "LoadDefaults": {
+      "Type": "Pass",
+      "Result": {
+        "resume_from": "Lambda - Initiate Job - MapImporter - Ingest Bulk Edits"
+      },
+      "ResultPath": "$.resume_from",
+      "Next": "Choice - Resume From"
+    },
+    "FailState": {
+      "Type": "Fail",
+      "Error": "Error"
+    },
+    "SuccessState": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Choice - Resume From": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapImporter - Ingest Bulk Edits",
+          "Next": "Lambda - Initiate Job - MapImporter - Ingest Bulk Edits"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Refresh DTP Relationship MV",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh DTP Relationship MV"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapExporter - Export to S3",
+          "Next": "Lambda - Initiate Job - MapExporter - Export to S3"
+        },  
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapIntersectionExporter - Run Calculate Intersections",
+          "Next": "Lambda - Initiate Job - MapIntersectionExporter - Run Calculate Intersections"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Refresh Intersections MV",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh Intersections MV"
+        }
+      ],
+      "Default": "Lambda - Initiate Job - MapImporter - Ingest Bulk Edits"
+    },
+    "Lambda - Initiate Job - MapImporter - Ingest Bulk Edits": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-bulk-edits",
+            "image": "${jsondecode(sfn_service_versions)["MapImporter"]["image"]}:${jsondecode(sfn_service_versions)["MapImporter"]["version"]}",
+            "julia_function": "MapImporter.step_apply_bulk_edits(apply_edits = true, geohash = false)",
+            "julia_module": "MapImporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-importer",
+            "port": "6701",
+             "cpu_limits": "${cpu_8xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_6xlarge}",
+            "memory_requests": "${memory_20xlarge}",
+            "eks_job_ttl": 150
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapImporter - Ingest Bulk Edits",
+      "ResultPath": "$.taskResult"
+    },
+    "Wait - MapImporter - Ingest Bulk Edits": {
+      "Type": "Wait",
+      "Seconds": 120,
+      "Next": "Lambda - Monitor Job - MapImporter - Ingest Bulk Edits"
+    },
+    "Lambda - Monitor Job - MapImporter - Ingest Bulk Edits": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-bulk-edits"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapImporter - Ingest Bulk Edits",
+      "ResultPath": "$.taskResult"
+    },
+    "Choice - MapImporter - Ingest Bulk Edits": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.taskResult.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Choice - MapImporter - End Early"
+        },
+        {
+          "Variable": "$.taskResult.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapImporter - Ingest Bulk Edits"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapImporter - Ingest Bulk Edits"
+    },
+    "Choice - MapImporter - End Early": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.end_early",
+              "IsPresent": true
+            },
+            {
+              "Variable": "$.end_early",
+              "BooleanEquals": true
+            }
+          ],
+          "Next": "SuccessState"
+        }
+      ],
+      "Default": "Lambda - Initiate Job - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Lambda - Cleanup Job - MapImporter - Ingest Bulk Edits": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-bulk-edits"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-relationship-mv",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_refresh_mv_general_list([:mm_derived_relationship_vicmap_transport_mv, :mm_priority_attribute_mv, :mm_feature_osm_line_mv, :mm_feature_vicmap_transport_line_mv, :mm_feature_dtp_osm_line_mv])",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_xlarge}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_large}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Wait - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Wait",
+      "Seconds": 15,
+      "Next": "Lambda - Monitor Job - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Lambda - Monitor Job - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-relationship-mv"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Choice - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapExporter - Export to S3"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Refresh DTP Relationship MV"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Lambda - Cleanup Job - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-relationship-mv"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapExporter - Export to S3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-exporter-export",
+            "image": "${jsondecode(sfn_service_versions)["MapExporter"]["image"]}:${jsondecode(sfn_service_versions)["MapExporter"]["version"]}",
+            "julia_function": "MapExporter.step_export(job_mode=true)",
+            "julia_module": "MapExporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-exporter",
+            "port": "6701",
+            "cpu_limits": "${cpu_6xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_4xlarge}",
+            "memory_requests": "${memory_30xlarge}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapExporter - Export to S3"
+    },
+    "Wait - MapExporter - Export to S3": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "Lambda - Monitor Job - MapExporter - Export to S3"
+    },
+    "Lambda - Monitor Job - MapExporter - Export to S3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-exporter-export"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapExporter - Export to S3"
+    },
+    "Choice - MapExporter - Export to S3": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapIntersectionExporter - Run Calculate Intersections"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapExporter - Export to S3"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapExporter - Export to S3"
+    },
+    "Lambda - Cleanup Job - MapExporter - Export to S3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-exporter-export"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-map-intersection-exporter-export",
+            "image": "${jsondecode(sfn_service_versions)["MapIntersectionExporter"]["image"]}:${jsondecode(sfn_service_versions)["MapIntersectionExporter"]["version"]}",
+            "julia_function": "MapIntersectionExporter.step_export()",
+            "julia_module": "MapIntersectionExporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-intersection-exporter",
+            "port": "6709",
+            "cpu_limits": "${cpu_4xlarge}",
+            "memory_limits": "${memory_30xlarge}",
+            "cpu_requests": "${cpu_2xlarge}",
+            "memory_requests": "${memory_20xlarge}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapIntersectionExporter - Run Calculate Intersections"
+    },
+    "Wait - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Wait",
+      "Seconds": 20,
+      "Next": "Lambda - Monitor Job - MapIntersectionExporter - Run Calculate Intersections"
+    },
+    "Lambda - Monitor Job - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-map-intersection-exporter-export"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapIntersectionExporter - Run Calculate Intersections"
+    },
+    "Choice - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh Intersections MV"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapIntersectionExporter - Run Calculate Intersections"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapIntersectionExporter - Run Calculate Intersections"
+    },
+    "Lambda - Cleanup Job - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-map-intersection-exporter-export"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Refresh Intersections MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-intersections-mv",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_refresh_mv_general_list([:mm_intersection_mv])",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_xlarge}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_large}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Refresh Intersections MV"
+    },
+    "Wait - MapEditor - Refresh Intersections MV": {
+      "Type": "Wait",
+      "Seconds": 15,
+      "Next": "Lambda - Monitor Job - MapEditor - Refresh Intersections MV"
+    },
+    "Lambda - Monitor Job - MapEditor - Refresh Intersections MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-intersections-mv"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Refresh Intersections MV"
+    },
+    "Choice - MapEditor - Refresh Intersections MV": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "SNS - MapIntersectionExporter - Run Calculate Intersections"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Refresh Intersections MV"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Refresh Intersections MV"
+    },
+    "SNS - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${sns_arn}",
+        "Message": {
+          "trigger_source": "MMIOsmDeltaLoad"
+        }
+      },
+      "Next": "SuccessState"
+    },
+    "Lambda - Cleanup Job - MapEditor - Refresh Intersections MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-intersections-mv"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    }
+  }
+}

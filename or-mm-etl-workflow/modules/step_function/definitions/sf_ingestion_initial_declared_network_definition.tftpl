@@ -1,0 +1,369 @@
+{
+  "Comment": "Initial OSM Load Step Function",
+  "StartAt": "Lambda - Initiate Job - MapEditor - Create Changeset",
+  "States": {
+    "Lambda - Initiate Job - MapEditor - Create Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-create-changeset",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "using MapEditor; MapEditor.App.step_create_changeset(:declared_network)",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_medium}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_small}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Create Changeset"
+    },
+    "Wait - MapEditor - Create Changeset": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "Lambda - Monitor Job - MapEditor - Create Changeset"
+    },
+    "Lambda - Monitor Job - MapEditor - Create Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-create-changeset"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Create Changeset"
+    },
+    "Choice - MapEditor - Create Changeset": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapImporter - Ingest Data"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Create Changeset"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Failed",
+          "Next": "Lambda - Cleanup Job - MapEditor - Create Changeset"
+        }
+      ]
+    },
+    "Lambda - Cleanup Job - MapEditor - Create Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-create-changeset"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true
+    },
+    "Lambda - Initiate Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data",
+            "image": "${jsondecode(sfn_service_versions)["MapImporter"]["image"]}:${jsondecode(sfn_service_versions)["MapImporter"]["version"]}",
+            "julia_function": "using MapImporter; MapImporter.step_load_new_data(:declared_network, debug=${debug}, job_mode=true)",
+            "julia_module": "MapImporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-importer",
+            "port": "6701",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_medium}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_small}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapImporter - Ingest Data"
+    },
+    "Wait - MapImporter - Ingest Data": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "Lambda - Monitor Job - MapImporter - Ingest Data"
+    },
+    "Lambda - Monitor Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapImporter - Ingest Data"
+    },
+    "Choice - MapImporter - Ingest Data": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Run Matching"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapImporter - Ingest Data"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Failed",
+          "Next": "Lambda - Cleanup Job - MapImporter - Ingest Data"
+        }
+      ]
+    },
+    "Lambda - Cleanup Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Lambda - Cleanup Job - MapEditor - Create Changeset"
+    },
+    "Lambda - Initiate Job - MapMatcher - Run Matching": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "using MapMatcher; MapMatcher.step_run_map_matching(:declared_network)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_medium}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_small}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapMatcher - Run Matching"
+    },
+    "Wait - MapMatcher - Run Matching": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "Lambda - Monitor Job - MapMatcher - Run Matching"
+    },
+    "Lambda - Monitor Job - MapMatcher - Run Matching": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Run Matching"
+    },
+    "Choice - MapMatcher - Run Matching": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Cleanup Job - MapMatcher - Run Matching"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Run Matching"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Failed",
+          "Next": "Lambda - Cleanup Job - MapMatcher - Run Matching"
+        }
+      ]
+    },
+    "Lambda - Cleanup Job - MapMatcher - Run Matching": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Lambda - Cleanup Job - MapImporter - Ingest Data"
+    }
+  }
+}

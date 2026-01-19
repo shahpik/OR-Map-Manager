@@ -1,0 +1,82 @@
+# https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-reviewers/create-pull-request-reviewer?view=azure-devops-rest-6.0
+
+parameters:
+  - name: targetRefName
+    type: string
+  - name: environmentName
+    type: string
+
+steps:
+  - task: PowerShell@2
+    name: AutoMergePR
+    displayName: 'Auto Merge PR'
+    inputs:
+      targetType: 'inline'
+      script: |
+
+        $head = @{ Authorization = "Bearer $env:SYSTEM_ACCESSTOKEN"  }
+
+        echo $(System.TeamFoundationCollectionUri)
+        echo $(System.TeamProject)/_apis/git/repositories/
+        echo $(Build.Repository.Name)/pullrequests/
+        echo $pullRequestId
+
+        # https://dev.azure.com/dd-managed-services/
+        # Optimal-Reality/_apis/git/repositories/
+        # env-or-client-dot-terraform/pullrequests/
+        # ?searchCriteria.status=3&top=50&searchCriteria.targetRefName=refs/heads/master&api-version=6.1"
+        # "$(RELEASE.ARTIFACTS.*YOURARTIFACTNAME*.SOURCEBRANCH)"
+
+
+        $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)?api-version=5.1"
+
+        Write-Host "Getting PR Approver ID"
+        $result = Invoke-RestMethod -Uri $url -Method GET -ContentType "application/json" -Headers $head
+        Write-Output $result
+        $prData = ($result)
+
+        $prCreatorId = $prData.createdBy.id
+
+        Write-Host "----- Pull request created - Setting auto complete -----"
+        $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)?api-version=5.1"
+        $prAuto = @{
+            autoCompleteSetBy=@{
+                id=$prCreatorId
+            };
+            completionOptions=@{
+                deleteSourceBranch="true";
+                mergeCommitMessage=($prData.title);
+                squashMerge="false";
+                mergeStrategy="rebase";
+            };
+        }
+        $autocomplete = Invoke-RestMethod -Uri $url -Method PATCH -ContentType "application/json" -Headers $head -Body ($prAuto|ConvertTo-Json -depth 32)
+
+        # Resolve comments
+        Write-Host "----- Resolving comments -----"
+        $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)/threads?api-version=5.1"
+        $threadData = Invoke-RestMethod -Uri $url -Method GET -ContentType "application/json" -Headers $head
+
+        $comments = $threadData.value[0].comments.length
+        Write-Host "There are $comments comments to be resolved"
+        $threadData.value | ForEach-Object {
+          $url = ("$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)/threads/{0}?api-version=5.1" -f $_.id)
+
+          $resolveBody = @{
+            status = "closed"
+          }
+
+          $resolve = Invoke-RestMethod -Uri $url -Method PATCH -ContentType "application/json" -Headers $head -Body ($resolveBody|ConvertTo-Json -depth 32)
+          Write-Output $resolve
+        }
+
+        # Approve pull request (and trigger auto-complete)
+        Write-Host "----- Auto-Approving Pull Request -----"
+        $urlApprove = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)/reviewers/$prCreatorId" + "?api-version=6.0"
+        $approveBody = @{
+            vote=10;
+        }
+        $approve = Invoke-RestMethod -Uri $urlApprove -Method PUT -ContentType "application/json" -Headers $head -Body ($approveBody|ConvertTo-Json -depth 32)
+      pwsh: true
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)

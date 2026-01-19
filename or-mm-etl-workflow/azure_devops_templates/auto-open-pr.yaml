@@ -1,0 +1,125 @@
+# https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/update?view=azure-devops-rest-5.0#enable_auto-completion_and_set_other_completion_options
+
+parameters:
+- name: targetRefName
+  type: string
+- name: environmentName
+  type: string  
+  
+steps:
+  - task: PowerShell@2
+    name: AutoOpenPR
+    displayName: 'Auto Open PR and Merge'
+    inputs:
+      targetType: 'inline'
+      script: |
+
+        $buildServiceId = "33a18168-03fb-4c7d-a478-6aecdc702d4d" # Optimal-Reality Build Service
+
+        Write-Output "Build Reason is $(Build.Reason)"
+        Write-Output "sourceRefName is $(Build.SourceBranch)"
+        Write-Output "targetRefName is ${{parameters.targetRefName}}"
+
+        $body =  @{
+          sourceRefName= "$(Build.SourceBranch)"
+          targetRefName = "${{parameters.targetRefName}}"
+          title = "Automated pull request ($(Build.SourceBranch) -> ${{parameters.targetRefName}})"
+          supportsIterations = $false  # set to true to persist comments between updates (generally not desired)
+          autoCompleteSetBy = @{
+            id = "$buildServiceId"
+          }
+          completionOptions = @{
+            deleteSourceBranch = "true"
+          }
+        }
+
+        $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests?api-version=5.0"
+
+        $head = @{ Authorization = "Bearer $env:SYSTEM_ACCESSTOKEN"  }
+        $json = ConvertTo-Json $body
+
+        $response = Invoke-RestMethod -Uri $url -Method Post -Headers $head -Body $json -ContentType application/json
+  
+
+        Write-Output $response
+
+        $pullRequestId = $response.pullRequestId
+        Write-Output " Writing the outpull request ID "
+        Write-Output "$pullRequestId"
+        echo "##vso[task.setvariable variable=pullRequestIdOut;isOutput=true]$pullRequestId"
+        Write-Host " Exported Variable $pullRequestIdOut "
+
+
+        #Adding merge PR to Azure
+
+        $head = @{ Authorization = "Bearer $env:SYSTEM_ACCESSTOKEN"  }
+
+        echo $(System.TeamFoundationCollectionUri)
+        echo $(System.TeamProject)/_apis/git/repositories/
+        echo $(Build.Repository.Name)/pullrequests/
+        echo $pullRequestId
+
+        # https://dev.azure.com/dd-managed-services/
+        # Optimal-Reality/_apis/git/repositories/
+        # env-or-client-dot-terraform/pullrequests/
+        # ?searchCriteria.status=3&top=50&searchCriteria.targetRefName=refs/heads/master&api-version=6.1"
+        # "$(RELEASE.ARTIFACTS.*YOURARTIFACTNAME*.SOURCEBRANCH)"
+
+
+        $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)?api-version=5.1"
+
+        Write-Host "Getting PR Approver ID"
+        $result = Invoke-RestMethod -Uri $url -Method GET -ContentType "application/json" -Headers $head
+        Write-Output $result
+        $prData = ($result)
+
+        $prCreatorId = $prData.createdBy.id
+
+        Write-Host "----- Pull request created - Setting auto complete -----"
+        $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)?api-version=5.1"
+        $prAuto = @{
+            autoCompleteSetBy=@{
+                id=$prCreatorId
+            };
+            completionOptions=@{
+                deleteSourceBranch="true";
+                mergeCommitMessage=($prData.title);
+                squashMerge="false";
+                mergeStrategy="rebase";
+            };
+        }
+        $autocomplete = Invoke-RestMethod -Uri $url -Method PATCH -ContentType "application/json" -Headers $head -Body ($prAuto|ConvertTo-Json -depth 32)
+
+        # Resolve comments
+        Write-Host "----- Resolving comments -----"
+        $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)/threads?api-version=5.1"
+        $threadData = Invoke-RestMethod -Uri $url -Method GET -ContentType "application/json" -Headers $head
+
+        $comments = $threadData.value[0].comments.length
+        Write-Host "There are $comments comments to be resolved"
+        $threadData.value | ForEach-Object {
+          $url = ("$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)/threads/{0}?api-version=5.1" -f $_.id)
+
+          $resolveBody = @{
+            status = "closed"
+          }
+
+          $resolve = Invoke-RestMethod -Uri $url -Method PATCH -ContentType "application/json" -Headers $head -Body ($resolveBody|ConvertTo-Json -depth 32)
+          Write-Output $resolve
+        }
+
+        # Approve pull request (and trigger auto-complete)
+        Write-Host "----- Auto-Approving Pull Request -----"
+        $urlApprove = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullrequests/$($pullRequestId)/reviewers/$prCreatorId" + "?api-version=6.0"
+        $approveBody = @{
+            vote=10;
+        }
+        $approve = Invoke-RestMethod -Uri $urlApprove -Method PUT -ContentType "application/json" -Headers $head -Body ($approveBody|ConvertTo-Json -depth 32)
+
+
+
+
+        # Output variable to indicate to the update teams template to notify as condition will vary when to run template and cannot be specified within in the below template task
+      pwsh: true
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)

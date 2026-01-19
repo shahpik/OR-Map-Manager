@@ -1,0 +1,143 @@
+{
+    "Comment": "MapEditor - Generic Step Function",
+    "StartAt": "Choice - Check Input",
+    "States": {
+        "Choice - Check Input": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.julia_function",
+                    "IsPresent": true,
+                    "Next": "Lambda - Initiate Job - MapEditor - Generic Function"
+                }
+            ],
+            "Default": "LoadDefaults"
+        },
+        "LoadDefaults": {
+            "Type": "Pass",
+            "Result": {
+                "julia_function": ""
+            },
+            "ResultPath": "$.julia_function",
+            "Next": "Lambda - Initiate Job - MapEditor - Generic Function"
+        },
+        "Lambda - Initiate Job - MapEditor - Generic Function": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "OutputPath": "$.Payload",
+            "Parameters": {
+                "FunctionName": "${lambda_function_arn}",
+                "Payload": {
+                    "mode": "INITIATE",
+                    "job_params": {
+                        "namespace": "${namespace}",
+                        "name": "${sfn_definition_prefix}-function",
+                        "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+                        "julia_function": "$.julia_function",
+                        "julia_module": "MapEditor",
+                        "env_prefix": "${env_prefix}",
+                        "k8s_microservice_name": "map-editor",
+                        "port": "6703",
+                        "cpu_limits": "${cpu_4xlarge}",
+                        "memory_limits": "${memory_20xlarge}",
+                        "cpu_requests": "${cpu_2xlarge}",
+                        "memory_requests": "${memory_5xlarge}",
+                        "eks_backoff_limit": 0
+                    }
+                }
+            },
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException",
+                        "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 6,
+                    "BackoffRate": 2
+                }
+            ],
+            "Next": "Wait - MapEditor - Generic Function"
+        },
+        "Wait - MapEditor - Generic Function": {
+            "Type": "Wait",
+            "Seconds": 10,
+            "Next": "Lambda - Monitor Job - MapEditor - Generic Function"
+          },
+          "Lambda - Monitor Job - MapEditor - Generic Function": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "${lambda_function_arn}",
+              "Payload": {
+                "mode": "MONITOR",
+                "job_params": {
+                  "namespace": "${namespace}",
+                  "name": "${sfn_definition_prefix}-function"
+                }
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 6,
+                "BackoffRate": 2
+              }
+            ],
+            "Next": "Choice - MapEditor - Generic Function"
+          },
+          "Choice - MapEditor - Generic Function": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.Payload.job_status",
+                "StringMatches": "Success",
+                "Next": "Lambda - Cleanup Job - MapEditor - Generic Function"
+              },
+              {
+                "Variable": "$.Payload.job_status",
+                "StringMatches": "Running",
+                "Next": "Wait - MapEditor - Generic Function"
+              }
+            ],
+            "Default": "Lambda - Cleanup Job - MapEditor - Generic Function"
+          },
+          "Lambda - Cleanup Job - MapEditor - Generic Function": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "OutputPath": "$.Payload",
+            "Parameters": {
+              "FunctionName": "${lambda_function_arn}",
+              "Payload": {
+                "mode": "DELETE",
+                "job_params": {
+                  "namespace": "${namespace}",
+                  "name": "${sfn_definition_prefix}-function"
+                }
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 6,
+                "BackoffRate": 2
+              }
+            ],
+            "End": true
+          }
+    }
+}

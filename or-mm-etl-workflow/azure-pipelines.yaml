@@ -1,0 +1,291 @@
+trigger:
+  branches:
+    include:
+      - '*'
+    exclude:
+      - refs/pull/*
+      - main
+
+parameters:
+- name: environments
+  type: object
+  default:
+    - environment: dev
+    - environment: ppr
+    - environment: prd
+
+variables:
+  - name: terraformVersion
+    value: 1.2.5
+  - name: webHookendpoint
+    value: 'https://deloitte.webhook.office.com/webhookb2/a9826a76-c9df-4364-9824-2941e234d349@36da45f1-dd2c-4d1f-af13-5abe46b99921/IncomingWebhook/9b54cfb819b44693afd7201aa2639e4e/de423b8a-0d9f-4303-9fd1-0aeb3a9a1715'
+  - group: 'aws-credentials'
+  - name: OR_BUILD_ACCOUNT_ID
+    value: 33a18168-03fb-4c7d-a478-6aecdc702d4d
+  - name: PRISMA_VARIABLE_GROUP
+    value: prisma-credentials
+
+
+stages:
+  - stage: Install_Lambda_Dependencies
+    displayName: 'Install Lambda dependencies'
+    pool:
+      vmImage: ubuntu-latest
+    # dependsOn: [] # allow parallel execution
+    jobs:
+      - job: Install_Lambda_Dependencies
+        displayName: 'Install Lambda dependencies'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.8'
+            displayName: 'Install Python 3.8'
+          - task: Bash@3
+            displayName: "Install Lambda dependencies"
+            inputs:
+              targetType: 'inline'
+              script: |
+                pip install --target modules/step_function/lambda -r modules/step_function/lambda/requirements.txt
+                ls -la modules/step_function/lambda
+                mkdir -p $(Build.ArtifactStagingDirectory)/step_function/modules
+                cp -a modules $(Build.ArtifactStagingDirectory)/
+                ls -la $(Build.ArtifactStagingDirectory)
+          - task: Bash@3
+            displayName: "Output build information"
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Build.SourceVersionMessage: $(Build.SourceVersionMessage)"
+                echo "Build.RequestedFor: $(Build.RequestedFor)"
+                echo "Build.RequestedForId: $(Build.RequestedForId)"
+                echo "Build.SourceBranch: $(Build.SourceBranch)"
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'plan'
+              publishLocation: 'Container'
+      
+  - ${{ each environment in parameters.environments }}:
+    - stage: Terraform_Plan_${{environment.environment}}
+      displayName: 'Terraform Plan ${{environment.environment}}'
+      pool:
+        vmImage: ubuntu-latest
+      dependsOn: Install_Lambda_Dependencies
+      jobs:
+        - deployment:
+          displayName: 'Terraform Plan Check - ${{ environment.environment }}'
+          environment: ${{environment.environment}}-terraform-mm-approver
+        - job: Terraform
+          variables:
+          - group: "${{ variables.PRISMA_VARIABLE_GROUP }}"
+          displayName: 'Terraform'
+          steps:
+            - task: TerraformInstaller@1
+              displayName: 'Terraform Installer'
+              inputs:
+                terraformVersion: $(terraformVersion)
+                
+            - task: UsePythonVersion@0
+              inputs:
+                versionSpec: '3.8'
+              displayName: 'Install Python 3.8'
+                
+            - task: InstallSSHKey@0
+              inputs:
+                knownHostsEntry: '|1|EG23y3SuKXlyTqS0XGNoI2m813Y=|2I81dE2GnKqyYBPbLU2eVqCEazk= ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Hr1oTWqNqOlzGJOfGJ4NakVyIzf1rXYd4d7wo6jBlkLvCA4odBlL0mDUyZ0/QUfTTqeu+tm22gOsv+VrVTMk6vwRU75gY/y9ut5Mb3bR5BV58dKXyq9A9UeB5Cakehn5Zgm6x1mKoVyf+FFn26iYqXJRgzIZZcZ5V6hrE0Qg39kZm4az48o0AUbf6Sp4SLdvnuMa2sVNwHBboS7EJkm57XQPVU3/QpyNLHbWDdzwtrlS+ez30S3AdYhLKEOxAG8weOnyrtLJAUen9mTkol8oII1edf7mWWbWVf0nBmly21+nZcmCTISQBtdcyPaEno7fFQMDD26/s0lfKob4Kw8H'
+                sshPublicKey: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC047cWGm3qRxt7l7bjFDOBPFcEP08oJm1puJ5yjLR2PlccfnVmlJ4ZRAJSqMEEc/vds7J4qkDgutym11Q1xmA35bna+QGTEBUwoAkqCmjFw3A95UxnuBoGi/h2NfWDoYWUjF6BPaRbYk6i4DqxEcCjbq91JPmVYQBEji2dDOIrnZ1HUmWssSAIg7qzWFyQb4F9k1m5xVvd8huscIfyDV+18D1Sa8e+DKbFbk55yKS0pMKS7hQ959aPvudcdpYniYIeaIPQG4rbdQjYz9bnBy97+gYGAKymVEB4OKt0ZW8NgFJWD9BiMRh2QqeM1vyRBSL9YCEIgUjb8IsZwRazV7FGLqI2chhkzqOMEgMewM1nlbCjyaPUIUIl2zdxICyHbXZk/ZrvQZHILj/GLAm8JFsAYQK67cNLTPLBUBDN6rRPVLRdM1BbjOmsfSJ1dFyWNHHECDpdmxHV6VURHVj59Zbj7E+7o0LQyK+TCl9ulRMtTOeq7oRCG6tO+9BHiih6TV0='
+                sshKeySecureFile: 'terraform_id_rsa'
+                addEntryToConfig: true
+                configHostname: 'ssh.dev.azure.com'
+                configHostAlias: 'ssh.dev.azure.com'
+
+            # - task: InstallSSHKey@0
+            #   inputs:
+            #     knownHostsEntry: '|1|8xMSfHLjmnZk2cROd6UFnP3Oj4o=|+jmc1/kkf8uJWe00Qb3PCRjZXhc= ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJlN2B3baQAKh4CCEcsiqYzs2T5nMSkQIArvA+RIMIhcRoqpvbR+PnqqRhtlx0zWjAsW1e0hHUDLzdloEjad/HggDxevgyeV6m4sczYqFnXgZ+aDmEjPt9pqAW3Ri2oZu1+DFdFRad1cgak3gcUsbHYJ7vOFIxPXfbC7PL5nOPMaPblAguHE5h8zIFfPZQN0LU1J9Y04MysKCyrVTLRLPT7J4ZSpJMfxpbvpib3tXWx1QW7aS9o2FOrOzTTvgkR6T/bJAOYUVfd5xAGpNPhEpUPgawmxQ+YFm3WvfO1iFpqxdkuTtLmfXrgGCT7APmYOxmZzCs40TQvdqj6jqnWAX5'
+            #     sshPublicKey: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2DnJvs3/fj60dJ1vUavwKlUOF8BdX595pyIJqPpKjlVVpmaAGXETW9Z+TMKTH7Jv+tgI16ihJzKYP5WSkuDWFZjUr2iq611sRYWN3f0vGOLo3stxrR3axTNqS3xhhvZ4slCI32HEc2c2RCSDgtoa9HqCbdrYNiCWzvJeh/ZSP/RTxWeDcvgYHbJrQClS/TqVaB7vpSefIWEGZGztznAxX3B2Pc617Q2K61QhfwMTImkbJOSVW1KFGjfIgqe/PfFhudNsejYJh9F6a8OYOLGrU2stNSCmPvFtXei3lYOLQpVJqCDC6y7/7mG76YJUltCrcrLkPrJsGP+s8JJFJWFiBU4jIordbRVzqW/ik0mMwij7TOyMz8T/6Cg0sEaRmNKAxFMuy9ey0Z3i8D8gpERcemC3W1FRpqT+oH8n5nTUPVA4J3EEkPxgRs+IqGxmaUsX8ymmmUK/zwharSl49TO5HkUfPRgADBjQBVVh0i1yPpNNF0jRheGqTDG8eU6hAcU='
+            #     sshKeySecureFile: 'dvcs_id_rsa'
+            #     addEntryToConfig: true
+            #     configHostname: 'dvcs.deloittedigital.com.au'
+            #     configHostAlias: 'dvcs.deloittedigital.com.au'
+
+            - task: Bash@3
+              displayName: "Set aws config profile"
+              env:
+                AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+                AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+                AWS_REGION: ap-southeast-2
+                AWS_PROFILE: or-mgt
+              inputs:
+                targetType: 'inline'
+                script: |
+                  aws --profile $AWS_PROFILE configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                  aws --profile $AWS_PROFILE configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                  aws --profile $AWS_PROFILE configure set region $AWS_REGION
+
+            # - task: Bash@3
+            #   displayName: "Assume Role to DEV/TST/PPR/PRD"
+            #   inputs:
+            #     targetType: 'inline'
+            #     script: |
+            #       DEV=$(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+            #       $(aws sts assume-role \
+            #         --role-arn arn:aws:iam::729234215193:role/trusting-administratoraccess-role \
+            #         --role-session-name AzureDevOps \
+            #         --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+            #         --output text))
+
+            #       # TST=$(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+            #       # $(aws sts assume-role \
+            #       #   --role-arn arn:aws:iam::543353361632:role/trusting-administratoraccess-role \
+            #       #   --role-session-name AzureDevOps \
+            #       #   --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+            #       #   --output text))
+
+            #       # PPR=$(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+            #       # $(aws sts assume-role \
+            #       #   --role-arn arn:aws:iam::388223041415:role/trusting-administratoraccess-role \
+            #       #   --role-session-name AzureDevOps \
+            #       #   --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+            #       #   --output text))
+
+            #       # PRD=$(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+            #       # $(aws sts assume-role \
+            #       #   --role-arn arn:aws:iam::222150071105:role/trusting-administratoraccess-role \
+            #       #   --role-session-name AzureDevOps \
+            #       #   --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+            #       #   --output text))
+
+            #   env:
+            #     AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+            #     AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+            #     AWS_REGION: ap-southeast-2
+
+            - template: azure_devops_templates/terraform-inventory.yaml
+              parameters:
+                name: 'tf_inventory'
+                env: ${{environment.environment}}
+
+            # - task: UsePythonVersion@0
+            #   inputs:
+            #     versionSpec: '3.8'
+            #   displayName: 'Install Python 3.8'
+
+            # - task: Bash@3
+            #   displayName: "Install Lambda dependencies"
+            #   inputs:
+            #     targetType: 'inline'
+            #     script: |
+            #       pip install --target modules/step_function/lambda -r modules/step_function/lambda/requirements.txt
+            #       ls -la modules/step_function/lambda
+            #       mkdir -p $(Build.ArtifactStagingDirectory)/step_function/modules
+            #       cp -r modules $(Build.ArtifactStagingDirectory)/
+
+            - template: azure_devops_templates/terraform-plan.yaml
+              parameters:
+                name: 'tf_plan'
+
+            - script: pip install checkov
+              displayName: 'Install Checkov'
+            # - script: |
+            #     checkov -d . --bc-api-key $(CHECKOV_USERNAME)::$(CHECKOV_PASSWORD)  --branch feature/test_prisma_scan --use-enforcement-rules  --framework terraform  --repo-id Optimal-Reality/env-or-client-dot-terraform --soft-fail
+            #   displayName: 'Scan with Prisma Cloud'
+            #   env:
+            #     PRISMA_API_URL: "https://api.anz.prismacloud.io"
+
+            - task: Bash@3
+              name: "Copy_artifacts"
+              displayName: 'Copy artifacts'
+              inputs:
+                targetType: 'inline'
+                script: |
+                  directories=$(find . -name 'tfplan' -printf '%h\n' | sort)
+                  echo -e "List of directories to copy tfplan files in :\n${directories}\n"
+                  mkdir -p $(Build.ArtifactStagingDirectory)/mm_resources
+                  for directory in $directories;
+                      do
+                      # echo "Copying tfplan file from ${directory} directory"
+                      # cp ${directory}/tfplan $(Build.ArtifactStagingDirectory)
+                      echo "Copying terraform related files from ${directory} directory to artifact staging directory"
+                      cp -r ${directory}/ $(Build.ArtifactStagingDirectory)/mm_resources/
+                  done;
+
+            - task: Bash@3
+              displayName: "Output build information"
+              inputs:
+                targetType: 'inline'
+                script: |
+                  echo "Build.SourceVersionMessage: $(Build.SourceVersionMessage)"
+                  echo "Build.RequestedFor: $(Build.RequestedFor)"
+                  echo "Build.RequestedForId: $(Build.RequestedForId)"
+                  echo "Build.SourceBranch: $(Build.SourceBranch)"
+
+            - task: PublishBuildArtifacts@1
+              inputs:
+                PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+                ArtifactName: 'plan'
+                publishLocation: 'Container'
+
+    - stage: Deploy${{environment.environment}}
+      dependsOn: Terraform_Plan_${{environment.environment}}
+      displayName: 'Deploy to ${{environment.environment}} Environment'
+      
+      jobs:
+        - deployment: deploy${{environment.environment}}
+          displayName: 'Terraform Apply ${{environment.environment}}'
+          pool:
+            vmImage: ubuntu-latest
+          environment: ${{environment.environment}}-terraform-mm-approver
+          strategy:
+            runOnce:
+              deploy:
+                steps:
+                  - task: TerraformInstaller@1
+                    displayName: 'Terraform Installer'
+                    inputs:
+                      terraformVersion: $(terraformVersion)
+
+                  - task: Bash@3
+                    displayName: "Set aws config profile"
+                    env:
+                      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+                      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+                      AWS_REGION: ap-southeast-2
+                      AWS_PROFILE: or-mgt
+                    inputs:
+                      targetType: 'inline'
+                      script: |
+                        aws --profile $AWS_PROFILE configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                        aws --profile $AWS_PROFILE configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                        aws --profile $AWS_PROFILE configure set region $AWS_REGION
+
+                  - task: Bash@3
+                    displayName: "Assume role to ${{environment.environment}}"
+                    inputs:
+                      targetType: 'inline'
+                      script: |
+                        ${{environment.environment}}=$(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+                        $(aws sts assume-role \
+                          --role-arn arn:aws:iam::729234215193:role/trusting-administratoraccess-role \
+                          --role-session-name AzureDevOps \
+                          --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+                          --output text))
+
+                    env:
+                      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+                      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+                      AWS_REGION: ap-southeast-2
+
+                      scritps: |
+                        pwd
+                        find -d .terraform
+
+                  - template: azure_devops_templates/terraform-pathfix.yaml
+                    parameters:
+                      name: 'tf_path_fix'
+                      path: 'plan'
+                      env: ${{environment.environment}}
+
+                  - template: azure_devops_templates/terraform-apply.yaml
+                    parameters:
+                      name: 'tf_apply'
+                      env: ${{environment.environment}}

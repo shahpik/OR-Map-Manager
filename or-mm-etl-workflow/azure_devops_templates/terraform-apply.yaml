@@ -1,0 +1,90 @@
+# requires output formatted as per terraform-inventory.yaml
+
+parameters:
+  name: ''
+  env: ''
+
+steps:
+  - bash: |
+      if [ -z "$NAME" ]; then
+        echo "##vso[task.logissue type=error;]Missing template parameter \"name\""
+        echo "##vso[task.complete result=Failed;]"
+      fi
+    env:
+      NAME: ${{ parameters.name }}
+    displayName: Check for required parameters
+
+  - task: Bash@3
+    name: '${{parameters.name}}'
+    displayName: 'Terraform apply'
+    inputs:
+      targetType: 'inline'
+      script: |
+        tferror=""
+        directories=$(find . -name 'tfplan' -printf '%h\n' | sort)
+        echo -e "List of directories to run apply in :\n${directories}\n"
+
+        # for directory in $directories;
+        #   do
+        #     prefix=${directory%???}
+        #     newvar=${directory#"$prefix"}
+        #     echo Prefix found as below:
+        #     echo $newvar
+        #     echo comparing ${{ parameters.env }} with $newvar and run if they are equal!
+
+        #     if [ ${newvar} -eq ${{ parameters.env }} ]
+        #     then
+        #         echo "Running terraform -chdir=${directory} apply tfplan"
+        #         ec=0
+        #         # Commenting out below line for test
+        #         # terraform -chdir=${directory} apply tfplan || ec=$?
+        #         if [ ! $ec -eq 0 ]; then
+        #           tferror="${tferror}${directory}\n"
+        #           echo "##[debug]Error with $dir, exit code is $ec."
+        #     fi
+        #     echo this ${directory} is will not run at this stage
+        #     fi
+        # done;
+
+
+        for directory in $directories;
+            do
+            prefix=${directory%???}
+            newvar=${directory#"$prefix"}
+            echo Prefix found as below:
+            echo $newvar
+            aws configure list-profiles
+            echo comparing ${{ parameters.env }} with $newvar and run if they are equal!
+
+            if [ $newvar == "${{ parameters.env }}" ]
+            then
+                
+                echo "Running terraform -chdir=${directory} apply tfplan"
+                ec=0
+                # Commenting out below line for test
+                terraform -chdir=${directory} apply tfplan || ec=$?
+                if [ ! $ec -eq 0 ]; then
+                    tferror="${tferror}${directory}\n"
+                    echo "##[debug]Error with $dir, exit code is $ec."
+                fi
+            else
+                echo this ${directory} is will not run at this stage
+            fi
+            
+
+        done;
+
+
+
+        if [ -n "$tferror" ]; then
+          echo "=============   TF ERROR   ============="
+          echo -e "${tferror}"
+
+          echo "##vso[task.logissue type=error;]Error: tferror variable is not an empty string... exiting."
+          echo "##vso[task.complete result=Failed;]"
+          exit 1
+        fi
+    env:
+      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+

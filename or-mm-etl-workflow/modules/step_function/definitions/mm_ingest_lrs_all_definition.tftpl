@@ -1,0 +1,142 @@
+{
+  "Comment": "LRS Load Step Function",
+  "StartAt": "Lambda - Initiate Job - MapImporter - Ingest Data",
+  "States": {
+    "FailState": {
+      "Type": "Fail",
+      "Error": "Error"
+    },
+    "SuccessState": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Lambda - Initiate Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data-bus",
+            "image": "${jsondecode(sfn_service_versions)["MapImporter"]["image"]}:${jsondecode(sfn_service_versions)["MapImporter"]["version"]}",
+            "julia_function": "MapImporter.step_load_new_data_from_source_list([:TTMC, :VCSD, :DTP_REGIONAL_BOUNDARIES, :RESPONSIBLE_AUTHORITY, :LGA, :LGA_CONTACT, :FEDERAL_ELECTORATE, :BUS, :STATE_UPPER_HOUSE, :SAFETY_CAMERAS, :STATE_LOWER_HOUSE, :TRAM, :POSTCODE, :SSD, :LOCALITY, :MELWAY, :SES_REGION]; debug=${debug}, job_mode=true)",
+            "julia_module": "MapImporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-importer",
+            "port": "6701",
+            "cpu_limits": "${cpu_large}",
+            "memory_limits": "${memory_10xlarge}",
+            "cpu_requests": "${cpu_medium}",
+            "memory_requests": "${memory_5xlarge}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapImporter - Ingest Data"
+    },
+    "Wait - MapImporter - Ingest Data": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "Lambda - Monitor Job - MapImporter - Ingest Data"
+    },
+    "Lambda - Monitor Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data-bus"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapImporter - Ingest Data"
+    },
+    "Choice - MapImporter - Ingest Data": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "SNS - MapImporter - Ingest Data"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapImporter - Ingest Data"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapImporter - Ingest Data"
+    },
+    "SNS - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${sns_arn}",
+        "Message": {
+          "trigger_source": "MMLrsIngestAll"
+        }
+      },
+      "Next": "SuccessState"
+    },
+    "Lambda - Cleanup Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data-bus"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    }
+  }
+}

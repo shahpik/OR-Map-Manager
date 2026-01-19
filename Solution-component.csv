@@ -1,0 +1,20 @@
+Solution overview
+Component,Description
+Experiment Manager, GraphQL API gateway.
+Map Manager Database, Main data store for Map Manager. Uses PostgreSQL on AWS RDS.
+Map Importer, Contains routines for downloading and transform data from external sources.
+, 
+, 
+Map Matcher, Contains routines for running map matching and creating/updating relationships.
+, 
+, 
+Map Editor, Contains routines for editing attributes and relationships, and manipulating changesets.
+, 
+, 
+Map Exporter, Caches map layers for export and provides an interface to access this data.
+Map Orchestrator, Runs scheduled and on-demand long-running processes for importing and matching layers.
+, 
+, 
+Batch Processor, Scheduled batch processes for back-end data loading
+Location Reference Service, Location reference GraphQL API.
+DTP Network, Resultant road network after Map Manager processing

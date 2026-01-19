@@ -1,0 +1,27 @@
+FROM julia:1.6.2
+
+ARG OPTION=NONE
+
+ENV JULIA_NUM_THREADS=4
+
+RUN apt-get update && apt-get install -y gcc musl-dev postgresql-client
+# RUN apk add --update --no-cache gcc openssh netcat-openbsd unzip curl gnu-libiconv musl-dev
+# RUN apk add --update --upgrade --no-cache gcc openssh gnu-libiconv musl-dev postgresql-client aws-cli krb5-libs
+RUN apt-get install -y ssh
+
+
+WORKDIR /app
+
+COPY . .
+
+# Add or-core-julia-registry
+RUN mkdir -m 600 ~/.ssh && ssh-keyscan dvcs.deloittedigital.com.au >> ~/.ssh/known_hosts
+RUN --mount=type=ssh julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(RegistrySpec(url="ssh://git@dvcs.deloittedigital.com.au:22/core/or-core-julia-registry.git"))'
+
+ENV JULIA_PROJECT @.
+RUN --mount=type=ssh julia deploy/packagecompile_m1.jl "$OPTION"
+RUN --mount=type=ssh julia -e 'using Pkg; Pkg.instantiate()'
+
+EXPOSE 6701
+
+ENTRYPOINT ["julia", "-JMapImporter.so", "-e", "MapImporter.run()"]

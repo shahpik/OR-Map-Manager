@@ -1,0 +1,87 @@
+-- drop table if exists tmp_here;
+-- drop table if exists tmp_here_attribute;
+
+
+-- --geometry, link_ids, route_id, type
+-- with tmp_here1 as (
+--   select
+--     ST_GeomFromGeoJSON("geometry") as geom_feature,
+--     "link_ids",
+--     "route_id",
+--     "type"
+--   from map_manager.stg_here
+-- )
+-- select
+--   random() as feature_id,  -- Maybe generate from s_source_id when we get this
+--   "route_id" as s_name,
+--   geom_feature,
+--   "route_id"
+-- into temporary tmp_here
+-- from tmp_here1
+-- ;
+
+-- with tmp_here2 as (
+--   select
+--     feature_id || '_route_ids' as attribute_id,
+--     feature_id as feature_id,
+--     'route_id' as s_name,
+--     "route_id" as s_value
+--   from tmp_here
+-- )
+-- select
+--   attribute_id,
+--   feature_id,
+--   s_name,
+--   s_value
+-- into temporary tmp_here_attribute
+-- from tmp_here2
+-- ;
+
+-- -- mm_layer
+-- insert into map_manager.mm_layer
+-- select
+--   'HERE' as layer_id,
+--   'Here' as s_name,
+--   'LINE' as e_layer_type
+-- on conflict (layer_id) do update
+-- set
+--   layer_id = excluded.layer_id,
+--   s_name = excluded.s_name,
+--   e_layer_type = excluded.e_layer_type
+-- ;
+
+-- -- mm_feature
+-- insert into map_manager.mm_feature
+-- select
+--   feature_id,
+--   'HERE' as layer_id,
+--   s_name,
+--   'LINE' as e_feature_type,
+--   NULL as s_source_id,  -- Use OBJECTID when we get this
+--   geom_feature
+-- from tmp_here
+-- on conflict (feature_id) do update
+-- set
+--   feature_id = excluded.feature_id,
+--   layer_id = excluded.layer_id,
+--   s_name = excluded.s_name,
+--   e_feature_type = excluded.e_feature_type,
+--   s_source_id = excluded.s_source_id,
+--   geom_feature = excluded.geom_feature
+-- ;
+
+-- -- mm_attribute
+-- insert into map_manager.mm_attribute 
+-- select
+--   attribute_id,
+--   feature_id,
+--   s_name,
+--   s_value
+-- from tmp_here_attribute
+-- on conflict (attribute_id) do update
+-- set
+--   attribute_id = excluded.attribute_id,
+--   feature_id = excluded.feature_id,
+--   s_name = excluded.s_name,
+--   s_value = excluded.s_value
+-- ;

@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:experimental
+FROM julia:1.6
+
+RUN apt-get install -y ssh
+
+WORKDIR /app
+
+COPY . .
+
+# Add or-core-julia-registry
+RUN mkdir -m 600 ~/.ssh && ssh-keyscan dvcs.deloittedigital.com.au >> ~/.ssh/known_hosts
+RUN --mount=type=ssh julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(RegistrySpec(url="ssh://git@dvcs.deloittedigital.com.au:22/core/or-core-julia-registry.git"))'
+
+ENV JULIA_PROJECT @.
+RUN --mount=type=ssh julia -e 'using Pkg; Pkg.instantiate()'
+
+EXPOSE 6701
+
+ENTRYPOINT ["julia", "-e", "using MapImporter; MapImporter.run()"]

@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ vars.name }}
+  labels:
+    app.kubernetes.io/name: "{{ vars.env_prefix }}-{{ vars.k8s_microservice_name }}"
+spec:
+  ttlSecondsAfterFinished: {{ vars.eks_job_ttl | default (60, true) }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "{{ vars.env_prefix }}-{{ vars.k8s_microservice_name }}"
+    spec:
+      serviceAccount: "{{ vars.env_prefix }}-{{ vars.k8s_microservice_name }}"
+      serviceAccountName: "{{ vars.env_prefix }}-{{ vars.k8s_microservice_name }}"
+      containers:
+      - name: {{ vars.name }}
+        image: {{ vars.image }}
+        command: ["julia", "-J{{ vars.julia_module }}.so", "-e", "using {{ vars.julia_module }}; {{ vars.julia_function }}" ]
+        env:
+          - name: PG_USERNAME
+            valueFrom:
+              secretKeyRef:
+                key: {{ vars.env_prefix }}-batch-postgresql-mm-user
+                name: {{ vars.env_prefix }}-batch-postgresql-mm-user
+                optional: false
+          - name: PG_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: {{ vars.env_prefix }}-batch-postgresql-mm-password
+                name: {{ vars.env_prefix }}-batch-postgresql-mm-password
+                optional: false
+          - name: OR_MASTER_JWT
+            valueFrom:
+              secretKeyRef:
+                key: {{ vars.env_prefix }}-batch-or-master-jwt
+                name: {{ vars.env_prefix }}-batch-or-master-jwt
+                optional: false
+        envFrom:
+          - configMapRef:
+              name: "{{ vars.env_prefix }}-{{ vars.k8s_microservice_name }}"
+        ports:
+        - containerPort: {{ vars.port }}
+          protocol: TCP
+        resources:
+          limits:
+            cpu: {{ vars.cpu_limits }}
+            memory: {{ vars.memory_limits }}
+          requests:
+            cpu: {{ vars.cpu_requests }}
+            memory: {{ vars.memory_requests }}
+        topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: topology.kubernetes.io/zone
+            whenUnsatisfiable: ScheduleAnyway
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: "{{ vars.env_prefix }}-{{ vars.k8s_microservice_name }}"
+                app: {{ vars.name }}
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: ScheduleAnyway
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: "{{ vars.env_prefix }}-{{ vars.k8s_microservice_name }}"
+                app: {{ vars.name }}
+      restartPolicy: Never
+  backoffLimit: {{ vars.eks_backoff_limit | default (2, true) }}
+

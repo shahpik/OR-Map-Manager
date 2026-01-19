@@ -1,0 +1,70 @@
+parameters:
+  - name: webHookEndpoint
+    type: string
+  - name: summary
+    type: string
+  - name: title
+    type: string
+  - name: subtitle
+    type: string
+  - name: previousTag
+    type: string
+  - name: newTag
+    type: string
+  - name: status
+    type: string
+  - name: buildLink
+    type: string
+
+steps:
+  - pwsh: |
+      $payload = @"
+      {
+        `"@type": "MessageCard",
+        `"@context": "http://schema.org/extensions",
+        "themeColor": "0076D7",
+        "summary": "${{ parameters.summary }}",
+        "sections": [
+          {
+            "activityTitle": "${{ parameters.title }}",
+            "activitySubtitle": "${{ parameters.subtitle }}",
+            "facts": [
+              {
+                "name": "Previous Image Version:",
+                "value": "${{ parameters.previousTag }}"
+              },
+              {
+                "name": "New Image Version:",
+                "value": "${{ parameters.newTag }}"
+              },
+              {
+                "name": "Status",
+                "value": "${{ parameters.status }}"
+              }
+            ],
+            "markdown": true
+          }
+        ],
+        "potentialAction": [
+          {
+            `"@type": "ActionCard",
+            "name": "View",
+            "actions": [
+              {
+                `"@type": "OpenUri",
+                "name": "View Build",
+                "targets": [
+                  {
+                    "os": "default",
+                    "uri": "${{ parameters.buildLink }}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+      "@
+
+      Invoke-RestMethod -Method POST -Uri "${{ parameters.webHookEndpoint }}" -Body $payload -Headers @{"Content-Type" = "application/json"}
+    displayName: 'Notify Teams'

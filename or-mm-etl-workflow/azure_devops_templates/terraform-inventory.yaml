@@ -1,0 +1,98 @@
+parameters:
+  name: ''
+  env: ''
+
+steps:
+  - bash: |
+      if [ -z "$NAME" ]; then
+        echo "##vso[task.logissue type=error;]Missing template parameter \"name\""
+        echo "##vso[task.complete result=Failed;]"
+      fi
+    env:
+      NAME: ${{ parameters.name }}
+    displayName: Check for required parameters
+
+  - task: Bash@3
+    name: '${{parameters.name}}'
+    displayName: 'Terraform inventory'
+    env:
+      # TARGET_BRANCH: $(System.PullRequest.TargetBranch)
+      SOURCE_BRANCH: $(Build.SourceBranch)
+      # PR_SOURCE_BRANCH: $(System.PullRequest.SourceBranch)
+      # BUILD_INITIATOR: $(Build.RequestedForId)
+    inputs:
+      targetType: 'inline'
+      script: |
+        printf '%s\n%s\n\n%s\n%s\n\n' "SOURCE_BRANCH:" "$SOURCE_BRANCH"
+        # printf '%s\n%s\n\n%s\n%s\n\n' "SOURCE_BRANCH:" "$SOURCE_BRANCH" "TARGET_BRANCH:" "$TARGET_BRANCH"
+        # printf '%s\n%s\n\n' "PR_SOURCE_BRANCH:" "$PR_SOURCE_BRANCH"
+
+        # # Regex allows for refs/heads/auto/env/(dev|tst|ppr|prd)/.* OR refs/heads/env/(dev|tst|ppr|prd)$
+        # DEPLOY_AUTO_REGEX="^refs/heads/auto/(dev|tst|ppr|prd)/.*"
+
+        # # Regex allows for refs/heads/auto/env/(dev|tst|ppr|prd)/.* OR refs/heads/env/(dev|tst|ppr|prd)$
+        # ENVIRONMENTS_REGEX="^refs/heads/(auto/(dev|tst|ppr|prd)/|(env/(dev|ppr|prd|tst)$))"
+        # ENV=$(echo $SOURCE_BRANCH | sed 's,.*/,,')
+
+        # if [[ $TARGET_BRANCH == ??System?PullRequest?TargetBranch? ]]; then
+        #   ENV=$(echo $SOURCE_BRANCH | sed 's,.*/,,')
+        #   else
+        #   ENV=$(echo $TARGET_BRANCH | sed 's,.*/,,')
+        # fi
+
+        # printf '%s\n%s\n\n'  "ENV:" "$ENV"
+
+        # # CD is only for microservices which is planned from ./02_resources/(dev|tst)
+        # if [[ "$TARGET_BRANCH" =~ $DEPLOY_AUTO_REGEX ]]; then
+        #   echo "'$TARGET_BRANCH' matches regex $DEPLOY_AUTO_REGEX"
+        #   echo "The bash rematch groups are: ${BASH_REMATCH[@]}"
+        #   echo "Setting deployment environment variable '$deploy_env' to '${BASH_REMATCH[1]}' ${BASH_REMATCH[1]}"
+        #   deploy_env=${BASH_REMATCH[1]}
+        # # Set $inventory to the 02_resource/$deploy_env
+        #   inventory="./02_resources/$deploy_env"
+
+        # elif [[ "$PR_SOURCE_BRANCH" =~ $DEPLOY_AUTO_REGEX ]]; then
+        #   echo "'$PR_SOURCE_BRANCH' matches regex $DEPLOY_AUTO_REGEX"
+        #   echo "The bash rematch groups are: ${BASH_REMATCH[@]}"
+        #   echo "Setting deployment environment variable '$deploy_env' to '${BASH_REMATCH[1]}' ${BASH_REMATCH[1]}"
+        #   deploy_env=${BASH_REMATCH[1]}
+
+        #   inventory="./02_resources/$deploy_env"
+        # elif [[ "$SOURCE_BRANCH" =~ $DEPLOY_AUTO_REGEX ]]; then
+        #   echo "'$SOURCE_BRANCH' matches regex $DEPLOY_AUTO_REGEX"
+        #   echo "The bash rematch groups are: ${BASH_REMATCH[@]}"
+        #   echo "Setting deployment environment variable '$deploy_env' to '${BASH_REMATCH[1]}' ${BASH_REMATCH[1]}"
+        #   deploy_env=${BASH_REMATCH[1]}
+
+        #   inventory="./02_resources/$deploy_env"
+        # elif [[ "$BUILD_INITIATOR" == "33a18168-03fb-4c7d-a478-6aecdc702d4d" ]]; then
+        #   echo "'$BUILD_INITIATOR' is the Build service user id, setting inventory to 02_resources/$deploy_env"
+        #   deploy_env=$(echo $SOURCE_BRANCH | sed 's,.*/,,')
+        #   inventory="./02_resources/$deploy_env"
+        # else
+        #    include=$(find . '(' -path "*/${ENV}/*" -or -path '*/components/*' ')' -name 'terraform.tfvars' -printf '%h\n' | sort)
+        #    exclude=$(find . '(' -path "*/${ENV}/*" -or -path '*/components/*' ')' -name '.tfignore' -printf '%h\n' | sort )
+        #    inventory=$(comm -23 <(echo "$include") <(echo "$exclude"))
+        # fi
+        # printf '%s\n%s\n\n%s\n%s\n\n%s\n%s\n\n' "Included Directories:" "${include}" "Excluded Directories:" "${exclude}" "Inventory:" "${inventory}"
+        
+        # include=$(find . '(' -path "*/*/*" -or -path '*/components/*' -or -path '*/ppr/*'')' -name 'terraform.tfvars' -printf '%h\n' | sort)
+        # exclude=$(find . '(' -path "*/*/*" -or -path '*/components/*' -or -path '*/ppr/*'')' -name '.tfignore' -printf '%h\n' | sort )
+        # inventory=$(comm -23 <(echo "$include") <(echo "$exclude"))
+        # outputValue=$(echo $inventory)
+        # printf '%s\n%s\n\n%s\n%s\n\n%s\n%s\n\n' "Included Directories:" "${include}" "Excluded Directories:" "${exclude}" "Inventory:" "${inventory}"
+
+        include=$(find . '(' -path "*/${{ parameters.env }}/*" ')' -name 'terraform.tfvars' -printf '%h\n' | sort)
+        exclude=$(find . '(' -path "*/dev/*" -or -path "*/tst/*" -or -path "*/ppr/*" -or -path "*/prd/*" -or -path '*/components/*' ')' -name '.tfignore' -printf '%h\n' | sort)
+
+        IFS=$'\n' sorted=($(sort <<<"${include[*]}")); unset IFS
+        # printf "%s\n" "${sorted[@]}"
+
+        inventory=$(comm -23 <(echo "$include") <(echo "$exclude"))
+        printf '%s\n%s\n\n%s\n%s\n\n%s\n%s\n\n' "Included Directories:" "${include}" "Excluded Directories:" "${exclude}" "Inventory:" "${inventory}"
+        outputValue=$(echo $inventory)
+
+        echo "##[command]Outputting the following result to the pipeline as 'inventory':"
+        echo "##[command]$outputValue"
+
+        echo "##vso[task.setvariable variable=INVENTORY;]$outputValue"

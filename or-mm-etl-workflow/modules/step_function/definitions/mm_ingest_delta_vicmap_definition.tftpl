@@ -1,0 +1,3006 @@
+{
+  "Comment": "VICMAP_TRANSPORT Source Ingestion Step Function",
+  "StartAt": "Choice - Check Input",
+  "States": {
+    "Choice - Check Input": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.resume_from",
+          "IsPresent": true,
+          "Next": "Choice - Resume From"
+        }
+      ],
+      "Default": "LoadDefaults"
+    },
+    "LoadDefaults": {
+      "Type": "Pass",
+      "Result": {
+        "resume_from": "Lambda - Initiate Job - MapEditor - Create Changeset"
+      },
+      "ResultPath": "$.resume_from",
+      "Next": "Choice - Resume From"
+    },
+    "FailState": {
+      "Type": "Fail",
+      "Error": "Error"
+    },
+    "SuccessState": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Choice - Resume From": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Create Changeset",
+          "Next": "Lambda - Initiate Job - MapEditor - Create Changeset"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Pre Ingestion",
+          "Next": "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Pre Ingestion"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapImporter - Ingest Data",
+          "Next": "Lambda - Initiate Job - MapImporter - Ingest Data"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapImporter - Calculate Delta",
+          "Next": "Lambda - Initiate Job - MapImporter - Calculate Delta"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Update Changeset Status",
+          "Next": "Lambda - Initiate Job - MapEditor - Update Changeset Status"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Check Changeset Status",
+          "Next": "Lambda - Initiate Job - MapEditor - Check Changeset Status"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Source Update Publish Changeset",
+          "Next": "Lambda - Initiate Job - MapEditor - Source Update Publish Changeset"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Update Changeset Status Post Approval",
+          "Next": "Lambda - Initiate Job - MapEditor - Update Changeset Status Post Approval"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table Post Published",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table Post Published"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapMatcher - Run Matching",
+          "Next": "Lambda - Initiate Job - MapMatcher - Run Matching"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapMatcher - Invalidate Previous OSM Relationships",
+          "Next": "Lambda - Initiate Job - MapMatcher - Invalidate Previous OSM Relationships"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Post Ingestion",
+          "Next": "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Post Ingestion"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapMatcher - Create Derived Layer",
+          "Next": "Lambda - Initiate Job - MapMatcher - Create Derived Layer"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapMatcher - Copy Unbroken OSM Data",
+          "Next": "Lambda - Initiate Job - MapMatcher - Copy Unbroken OSM Data"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapMatcher - Delta Persistence",
+          "Next": "Lambda - Initiate Job - MapMatcher - Delta Persistence"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Refresh DTP Feature MV",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh DTP Feature MV"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapMatcher - Run Matching Against Derived Layer",
+          "Next": "Lambda - Initiate Job - MapMatcher - Run Matching Against Derived Layer"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapMatcher - Invalidate Previous DTP Relationships",
+          "Next": "Lambda - Initiate Job - MapMatcher - Invalidate Previous DTP Relationships"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Refresh DTP Relationship MV",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh DTP Relationship MV"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapMatcher - Generate Match Reports",
+          "Next": "Lambda - Initiate Job - MapMatcher - Generate Match Reports"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapExporter - Export to S3",
+          "Next": "Lambda - Initiate Job - MapExporter - Export to S3"
+        },  
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapIntersectionExporter - Run Calculate Intersections",
+          "Next": "Lambda - Initiate Job - MapIntersectionExporter - Run Calculate Intersections"
+        },
+        {
+          "Variable": "$.resume_from",
+          "StringEquals": "Lambda - Initiate Job - MapEditor - Refresh Intersections MV",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh Intersections MV"
+        }
+      ],
+      "Default": "Lambda - Initiate Job - MapEditor - Create Changeset"
+    },
+    "Lambda - Initiate Job - MapEditor - Create Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-create-changeset",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_create_changeset(:VICMAP_TRANSPORT)",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_medium}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_small}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Create Changeset"
+    },
+    "Wait - MapEditor - Create Changeset": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "Lambda - Monitor Job - MapEditor - Create Changeset"
+    },
+    "Lambda - Monitor Job - MapEditor - Create Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-create-changeset"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Create Changeset"
+    },
+    "Choice - MapEditor - Create Changeset": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Pre Ingestion"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Create Changeset"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Create Changeset"
+    },
+    "Lambda - Cleanup Job - MapEditor - Create Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-create-changeset"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Pre Ingestion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-trunc-temp-feat-att-pre-ingest",
+            "image": "${jsondecode(sfn_service_versions)["MapImporter"]["image"]}:${jsondecode(sfn_service_versions)["MapImporter"]["version"]}",
+            "julia_function": "MapImporter.App.step_truncate_all_temp_tables()",
+            "julia_module": "MapImporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-importer",
+            "port": "6701",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_medium}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_small}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapImporter - Truncate All Temp Tables Pre Ingestion"
+    },
+    "Wait - MapImporter - Truncate All Temp Tables Pre Ingestion": {
+      "Type": "Wait",
+      "Seconds": 15,
+      "Next": "Lambda - Monitor Job - MapImporter - Truncate All Temp Tables Pre Ingestion"
+    },
+    "Lambda - Monitor Job - MapImporter - Truncate All Temp Tables Pre Ingestion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-trunc-temp-feat-att-pre-ingest"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapImporter - Truncate All Temp Tables Pre Ingestion"
+    },
+    "Choice - MapImporter - Truncate All Temp Tables Pre Ingestion": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapImporter - Ingest Data"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapImporter - Truncate All Temp Tables Pre Ingestion"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapImporter - Truncate All Temp Tables Pre Ingestion"
+    },
+    "Lambda - Cleanup Job - MapImporter - Truncate All Temp Tables Pre Ingestion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-trunc-temp-feat-att-pre-ingest"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data",
+            "image": "${jsondecode(sfn_service_versions)["MapImporter"]["image"]}:${jsondecode(sfn_service_versions)["MapImporter"]["version"]}",
+            "julia_function": "MapImporter.step_load_new_data(:SOURCE_VICMAP_TRANSPORT, debug=${debug}, job_mode=true)",
+            "julia_module": "MapImporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-importer",
+            "port": "6701",
+            "cpu_limits": "${cpu_4xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_2xlarge}",
+            "memory_requests": "${memory_10xlarge}",
+            "eks_job_ttl": 150
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapImporter - Ingest Data"
+    },
+    "Wait - MapImporter - Ingest Data": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Lambda - Monitor Job - MapImporter - Ingest Data"
+    },
+    "Lambda - Monitor Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapImporter - Ingest Data"
+    },
+    "Choice - MapImporter - Ingest Data": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapImporter - Calculate Delta"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapImporter - Ingest Data"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapImporter - Ingest Data"
+    },
+    "Lambda - Cleanup Job - MapImporter - Ingest Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-ingest-data"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapImporter - Calculate Delta": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-calculate-delta",
+            "image": "${jsondecode(sfn_service_versions)["MapImporter"]["image"]}:${jsondecode(sfn_service_versions)["MapImporter"]["version"]}",
+            "julia_function": "MapImporter.App.step_delta_function(:VICMAP_TRANSPORT)",
+            "julia_module": "MapImporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-importer",
+            "port": "6701",
+            "cpu_limits": "${cpu_4xlarge}",
+            "memory_limits": "${memory_10xlarge}",
+            "cpu_requests": "${cpu_2xlarge}",
+            "memory_requests": "${memory_10xlarge}",
+            "eks_job_ttl": 150
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapImporter - Calculate Delta"
+    },
+    "Wait - MapImporter - Calculate Delta": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Lambda - Monitor Job - MapImporter - Calculate Delta"
+    },
+    "Lambda - Monitor Job - MapImporter - Calculate Delta": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-calculate-delta"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapImporter - Calculate Delta"
+    },
+    "Choice - MapImporter - Calculate Delta": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapImporter - Calculate Delta"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapImporter - Calculate Delta"
+    },
+    "Lambda - Cleanup Job - MapImporter - Calculate Delta": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-calculate-delta"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-mv-feat-table",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_refresh_mv_feature(:VICMAP_TRANSPORT)",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_xlarge}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_large}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Refresh MV Feat Table"
+    },
+    "Wait - MapEditor - Refresh MV Feat Table": {
+      "Type": "Wait",
+      "Seconds": 15,
+      "Next": "Lambda - Monitor Job - MapEditor - Refresh MV Feat Table"
+    },
+    "Lambda - Monitor Job - MapEditor - Refresh MV Feat Table": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-mv-feat-table"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Refresh MV Feat Table"
+    },
+    "Choice - MapEditor - Refresh MV Feat Table": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Update Changeset Status"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Refresh MV Feat Table"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Refresh MV Feat Table"
+    },
+    "Lambda - Cleanup Job - MapEditor - Refresh MV Feat Table": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-mv-feat-table"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Update Changeset Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-update-changeset-status",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_update_source_update_changeset_status(:VICMAP_TRANSPORT)",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_xlarge}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_large}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Update Changeset Status"
+    },
+    "Wait - MapEditor - Update Changeset Status": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "Lambda - Monitor Job - MapEditor - Update Changeset Status"
+    },
+    "Lambda - Monitor Job - MapEditor - Update Changeset Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-update-changeset-status"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Update Changeset Status"
+    },
+    "Choice - MapEditor - Update Changeset Status": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Check Changeset Status"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Update Changeset Status"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Update Changeset Status"
+    },
+    "Lambda - Cleanup Job - MapEditor - Update Changeset Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-update-changeset-status"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Check Changeset Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-changeset-status",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_check_changeset_status(:VICMAP_TRANSPORT)",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_large}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_medium}",
+            "eks_job_ttl": 360
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - Init - MapEditor - Check Changeset Status"
+    },
+    "Wait - Init - MapEditor - Check Changeset Status": {
+      "Type": "Wait",
+      "Seconds": 5,
+      "Next": "Lambda - Monitor Job - MapEditor - Check Changeset Status"
+    },
+    "Wait - MapEditor - Check Changeset Status": {
+      "Type": "Wait",
+      "Seconds": 300,
+      "Next": "Lambda - Monitor Job - MapEditor - Check Changeset Status"
+    },
+    "Lambda - Monitor Job - MapEditor - Check Changeset Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-changeset-status"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Check Changeset Status"
+    },
+    "Choice - MapEditor - Check Changeset Status": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Source Update Publish Changeset"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Check Changeset Status"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Check Changeset Status"
+    },
+    "Lambda - Cleanup Job - MapEditor - Check Changeset Status": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-changeset-status"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Source Update Publish Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-publish-changeset",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_source_layer_update_publish_changeset()",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_large}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_medium}",
+            "eks_job_ttl": 180
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - Init - MapEditor - Source Update Publish Changeset"
+    },
+    "Wait - Init - MapEditor - Source Update Publish Changeset": {
+      "Type": "Wait",
+      "Seconds": 5,
+      "Next": "Lambda - Monitor Job - MapEditor - Source Update Publish Changeset"
+    },
+    "Wait - MapEditor - Source Update Publish Changeset": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Lambda - Monitor Job - MapEditor - Source Update Publish Changeset"
+    },
+    "Lambda - Monitor Job - MapEditor - Source Update Publish Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-publish-changeset"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Source Update Publish Changeset"
+    },
+    "Choice - MapEditor - Source Update Publish Changeset": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Update Changeset Status Post Approval"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Source Update Publish Changeset"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Source Update Publish Changeset"
+    },
+    "Lambda - Cleanup Job - MapEditor - Source Update Publish Changeset": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-publish-changeset"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Update Changeset Status Post Approval": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-update-status-approved",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_update_source_update_changeset_status_post_approval(:VICMAP_TRANSPORT)",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_xlarge}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_large}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Update Changeset Status Post Approval"
+    },
+    "Wait - MapEditor - Update Changeset Status Post Approval": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "Lambda - Monitor Job - MapEditor - Update Changeset Status Post Approval"
+    },
+    "Lambda - Monitor Job - MapEditor - Update Changeset Status Post Approval": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-update-status-approved"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Update Changeset Status Post Approval"
+    },
+    "Choice - MapEditor - Update Changeset Status Post Approval": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table Post Published"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Update Changeset Status Post Approval"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Update Changeset Status Post Approval"
+    },
+    "Lambda - Cleanup Job - MapEditor - Update Changeset Status Post Approval": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-update-status-approved"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Refresh MV Feat Table Post Published": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-mv-feat-table-post",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_refresh_mv_feature(:VICMAP_TRANSPORT)",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_large}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_medium}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Refresh MV Feat Table Post Published"
+    },
+    "Wait - MapEditor - Refresh MV Feat Table Post Published": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "Lambda - Monitor Job - MapEditor - Refresh MV Feat Table Post Published"
+    },
+    "Lambda - Monitor Job - MapEditor - Refresh MV Feat Table Post Published": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-mv-feat-table-post"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Refresh MV Feat Table Post Published"
+    },
+    "Choice - MapEditor - Refresh MV Feat Table Post Published": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Run Matching"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Refresh MV Feat Table Post Published"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Refresh MV Feat Table Post Published"
+    },
+    "Lambda - Cleanup Job - MapEditor - Refresh MV Feat Table Post Published": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-mv-feat-table-post"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapMatcher - Run Matching": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "MapMatcher.step_run_map_matching_from_source_list([:VICMAP_TRANSPORT], :VICMAP_TRANSPORT; original_osm=true, debug=${debug}, job_mode=true)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_20xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_8xlarge}",
+            "memory_requests": "${memory_30xlarge}",
+            "eks_job_ttl": 660
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - Init - MapMatcher - Run Matching"
+    },
+    "Wait - Init - MapMatcher - Run Matching": {
+      "Type": "Wait",
+      "Seconds": 5,
+      "Next": "Lambda - Monitor Job - MapMatcher - Run Matching"
+    },
+    "Wait - MapMatcher - Run Matching": {
+      "Type": "Wait",
+      "Seconds": 600,
+      "Next": "Lambda - Monitor Job - MapMatcher - Run Matching"
+    },
+    "Lambda - Monitor Job - MapMatcher - Run Matching": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Run Matching"
+    },
+    "Choice - MapMatcher - Run Matching": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Invalidate Previous OSM Relationships"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Run Matching"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapMatcher - Run Matching"
+    },
+    "Lambda - Cleanup Job - MapMatcher - Run Matching": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapMatcher - Invalidate Previous OSM Relationships": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-update-prev-osm-relationships",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "MapMatcher.App.step_invalidate_original_OSM_relationships(:VICMAP_TRANSPORT)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_6xlarge}",
+            "memory_limits": "${memory_20xlarge}",
+            "cpu_requests": "${cpu_4xlarge}",
+            "memory_requests": "${memory_10xlarge}",
+            "eks_backoff_limit": 0
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapMatcher - Invalidate Previous OSM Relationships"
+    },
+    "Wait - MapMatcher - Invalidate Previous OSM Relationships": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "Lambda - Monitor Job - MapMatcher - Invalidate Previous OSM Relationships"
+    },
+    "Lambda - Monitor Job - MapMatcher - Invalidate Previous OSM Relationships": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-update-prev-osm-relationships"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Invalidate Previous OSM Relationships"
+    },
+    "Choice - MapMatcher - Invalidate Previous OSM Relationships": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Post Ingestion"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Invalidate Previous OSM Relationships"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapMatcher - Invalidate Previous OSM Relationships"
+    },
+    "Lambda - Cleanup Job - MapMatcher - Invalidate Previous OSM Relationships": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-update-prev-osm-relationships"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapImporter - Truncate All Temp Tables Post Ingestion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-trunc-temp-feat-att-post-ingest",
+            "image": "${jsondecode(sfn_service_versions)["MapImporter"]["image"]}:${jsondecode(sfn_service_versions)["MapImporter"]["version"]}",
+            "julia_function": "MapImporter.App.step_truncate_all_temp_tables()",
+            "julia_module": "MapImporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-importer",
+            "port": "6701",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_medium}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_small}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapImporter - Truncate All Temp Tables Post Ingestion"
+    },
+    "Wait - MapImporter - Truncate All Temp Tables Post Ingestion": {
+      "Type": "Wait",
+      "Seconds": 15,
+      "Next": "Lambda - Monitor Job - MapImporter - Truncate All Temp Tables Post Ingestion"
+    },
+    "Lambda - Monitor Job - MapImporter - Truncate All Temp Tables Post Ingestion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-trunc-temp-feat-att-post-ingest"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapImporter - Truncate All Temp Tables Post Ingestion"
+    },
+    "Choice - MapImporter - Truncate All Temp Tables Post Ingestion": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Create Derived Layer"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapImporter - Truncate All Temp Tables Post Ingestion"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapImporter - Truncate All Temp Tables Post Ingestion"
+    },
+    "Lambda - Cleanup Job - MapImporter - Truncate All Temp Tables Post Ingestion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-importer-trunc-temp-feat-att-post-ingest"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapMatcher - Create Derived Layer": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-create-derived-layer",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "MapMatcher.App.step_split_osm_ways(:VICMAP_TRANSPORT)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_8xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_6xlarge}",
+            "memory_requests": "${memory_30xlarge}",
+            "eks_job_ttl": 150
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapMatcher - Create Derived Layer"
+    },
+    "Wait - MapMatcher - Create Derived Layer": {
+      "Type": "Wait",
+      "Seconds": 120,
+      "Next": "Lambda - Monitor Job - MapMatcher - Create Derived Layer"
+    },
+    "Lambda - Monitor Job - MapMatcher - Create Derived Layer": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-create-derived-layer"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Create Derived Layer"
+    },
+    "Choice - MapMatcher - Create Derived Layer": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Copy Unbroken OSM Data"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Create Derived Layer"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapMatcher - Create Derived Layer"
+    },
+    "Lambda - Cleanup Job - MapMatcher - Create Derived Layer": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-create-derived-layer"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapMatcher - Copy Unbroken OSM Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-copy-unbroken-osm-data",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "MapMatcher.App.step_write_unbroken_ways_nodes_attrs(:VICMAP_TRANSPORT)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_8xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_6xlarge}",
+            "memory_requests": "${memory_30xlarge}",
+            "eks_job_ttl": 150
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapMatcher - Copy Unbroken OSM Data"
+    },
+    "Wait - MapMatcher - Copy Unbroken OSM Data": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Lambda - Monitor Job - MapMatcher - Copy Unbroken OSM Data"
+    },
+    "Lambda - Monitor Job - MapMatcher - Copy Unbroken OSM Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-copy-unbroken-osm-data"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Copy Unbroken OSM Data"
+    },
+    "Choice - MapMatcher - Copy Unbroken OSM Data": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Delta Persistence"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Copy Unbroken OSM Data"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapMatcher - Copy Unbroken OSM Data"
+    },
+    "Lambda - Cleanup Job - MapMatcher - Copy Unbroken OSM Data": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-copy-unbroken-osm-data"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapMatcher - Delta Persistence": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-persist-custom-edits",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "MapMatcher.App.step_persistence(:VICMAP_TRANSPORT)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_8xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_6xlarge}",
+            "memory_requests": "${memory_30xlarge}",
+            "eks_job_ttl": 360
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapMatcher - Delta Persistence"
+    },
+    "Wait - MapMatcher - Delta Persistence": {
+      "Type": "Wait",
+      "Seconds": 300,
+      "Next": "Lambda - Monitor Job - MapMatcher - Delta Persistence"
+    },
+    "Lambda - Monitor Job - MapMatcher - Delta Persistence": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-persist-custom-edits"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Delta Persistence"
+    },
+    "Choice - MapMatcher - Delta Persistence": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh DTP Feature MV"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Delta Persistence"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapMatcher - Delta Persistence"
+    },
+    "Lambda - Cleanup Job - MapMatcher - Delta Persistence": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-persist-custom-edits"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Refresh DTP Feature MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-feat-mv",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_refresh_mv_feature(:DTP_OSM)",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_xlarge}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_large}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Refresh DTP Feature MV"
+    },
+    "Wait - MapEditor - Refresh DTP Feature MV": {
+      "Type": "Wait",
+      "Seconds": 15,
+      "Next": "Lambda - Monitor Job - MapEditor - Refresh DTP Feature MV"
+    },
+    "Lambda - Monitor Job - MapEditor - Refresh DTP Feature MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-feat-mv"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Refresh DTP Feature MV"
+    },
+    "Choice - MapEditor - Refresh DTP Feature MV": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Run Matching Against Derived Layer"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Refresh DTP Feature MV"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Refresh DTP Feature MV"
+    },
+    "Lambda - Cleanup Job - MapEditor - Refresh DTP Feature MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-feat-mv"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapMatcher - Run Matching Against Derived Layer": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching-derived",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "MapMatcher.step_run_map_matching_from_source_list([:VICMAP_TRANSPORT, :DECLARED_NETWORK], :VICMAP_TRANSPORT; original_osm=false, debug=${debug}, job_mode=true)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_20xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_8xlarge}",
+            "memory_requests": "${memory_30xlarge}",
+            "eks_job_ttl": 660
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapMatcher - Run Matching Against Derived Layer"
+    },
+    "Wait - MapMatcher - Run Matching Against Derived Layer": {
+      "Type": "Wait",
+      "Seconds": 600,
+      "Next": "Lambda - Monitor Job - MapMatcher - Run Matching Against Derived Layer"
+    },
+    "Lambda - Monitor Job - MapMatcher - Run Matching Against Derived Layer": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching-derived"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Run Matching Against Derived Layer"
+    },
+    "Choice - MapMatcher - Run Matching Against Derived Layer": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Invalidate Previous DTP Relationships"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Run Matching Against Derived Layer"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapMatcher - Run Matching Against Derived Layer"
+    },
+    "Lambda - Cleanup Job - MapMatcher - Run Matching Against Derived Layer": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-run-matching-derived"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapMatcher - Invalidate Previous DTP Relationships": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-update-prev-dtp-relationships",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "MapMatcher.App.step_invalidate_DTP_OSM_relationships(:VICMAP_TRANSPORT)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_6xlarge}",
+            "memory_limits": "${memory_20xlarge}",
+            "cpu_requests": "${cpu_4xlarge}",
+            "memory_requests": "${memory_10xlarge}",
+            "eks_backoff_limit": 0
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapMatcher - Invalidate Previous DTP Relationships"
+    },
+    "Wait - MapMatcher - Invalidate Previous DTP Relationships": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "Lambda - Monitor Job - MapMatcher - Invalidate Previous DTP Relationships"
+    },
+    "Lambda - Monitor Job - MapMatcher - Invalidate Previous DTP Relationships": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-update-prev-dtp-relationships"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Invalidate Previous DTP Relationships"
+    },
+    "Choice - MapMatcher - Invalidate Previous DTP Relationships": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh DTP Relationship MV"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Invalidate Previous DTP Relationships"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapMatcher - Invalidate Previous DTP Relationships"
+    },
+    "Lambda - Cleanup Job - MapMatcher - Invalidate Previous DTP Relationships": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-update-prev-dtp-relationships"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-relationship-mv",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_refresh_mv_general_list([:mm_derived_relationship_vicmap_transport_mv, :mm_priority_attribute_mv])",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_xlarge}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_large}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Wait - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Wait",
+      "Seconds": 15,
+      "Next": "Lambda - Monitor Job - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Lambda - Monitor Job - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-relationship-mv"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Choice - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapMatcher - Generate Match Reports"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Refresh DTP Relationship MV"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Refresh DTP Relationship MV"
+    },
+    "Lambda - Cleanup Job - MapEditor - Refresh DTP Relationship MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-dtp-relationship-mv"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapMatcher - Generate Match Reports": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-generate-match-reports",
+            "image": "${jsondecode(sfn_service_versions)["MapMatcher"]["image"]}:${jsondecode(sfn_service_versions)["MapMatcher"]["version"]}",
+            "julia_function": "MapMatcher.App.step_publish_match_report(:VICMAP_TRANSPORT)",
+            "julia_module": "MapMatcher",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-matcher",
+            "port": "6702",
+            "cpu_limits": "${cpu_6xlarge}",
+            "memory_limits": "${memory_20xlarge}",
+            "cpu_requests": "${cpu_4xlarge}",
+            "memory_requests": "${memory_10xlarge}",
+            "eks_backoff_limit": 0
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapMatcher - Generate Match Reports"
+    },
+    "Wait - MapMatcher - Generate Match Reports": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "Lambda - Monitor Job - MapMatcher - Generate Match Reports"
+    },
+    "Lambda - Monitor Job - MapMatcher - Generate Match Reports": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-generate-match-reports"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapMatcher - Generate Match Reports"
+    },
+    "Choice - MapMatcher - Generate Match Reports": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapExporter - Export to S3"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapMatcher - Generate Match Reports"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapMatcher - Generate Match Reports"
+    },
+    "Lambda - Cleanup Job - MapMatcher - Generate Match Reports": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-matcher-generate-match-reports"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapExporter - Export to S3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-exporter-export",
+            "image": "${jsondecode(sfn_service_versions)["MapExporter"]["image"]}:${jsondecode(sfn_service_versions)["MapExporter"]["version"]}",
+            "julia_function": "MapExporter.step_export(job_mode=true)",
+            "julia_module": "MapExporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-exporter",
+            "port": "6701",
+            "cpu_limits": "${cpu_6xlarge}",
+            "memory_limits": "${memory_50xlarge}",
+            "cpu_requests": "${cpu_4xlarge}",
+            "memory_requests": "${memory_30xlarge}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapExporter - Export to S3"
+    },
+    "Wait - MapExporter - Export to S3": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "Lambda - Monitor Job - MapExporter - Export to S3"
+    },
+    "Lambda - Monitor Job - MapExporter - Export to S3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-exporter-export"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapExporter - Export to S3"
+    },
+    "Choice - MapExporter - Export to S3": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapIntersectionExporter - Run Calculate Intersections"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapExporter - Export to S3"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapExporter - Export to S3"
+    },
+    "Lambda - Cleanup Job - MapExporter - Export to S3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-exporter-export"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-map-intersection-exporter-export",
+            "image": "${jsondecode(sfn_service_versions)["MapIntersectionExporter"]["image"]}:${jsondecode(sfn_service_versions)["MapIntersectionExporter"]["version"]}",
+            "julia_function": "MapIntersectionExporter.step_export()",
+            "julia_module": "MapIntersectionExporter",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-intersection-exporter",
+            "port": "6709",
+            "cpu_limits": "${cpu_4xlarge}",
+            "memory_limits": "${memory_30xlarge}",
+            "cpu_requests": "${cpu_2xlarge}",
+            "memory_requests": "${memory_20xlarge}",
+            "eks_job_ttl": 150
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapIntersectionExporter - Run Calculate Intersections"
+    },
+    "Wait - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Wait",
+      "Seconds": 120,
+      "Next": "Lambda - Monitor Job - MapIntersectionExporter - Run Calculate Intersections"
+    },
+    "Lambda - Monitor Job - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-map-intersection-exporter-export"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapIntersectionExporter - Run Calculate Intersections"
+    },
+    "Choice - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "Lambda - Initiate Job - MapEditor - Refresh Intersections MV"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapIntersectionExporter - Run Calculate Intersections"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapIntersectionExporter - Run Calculate Intersections"
+    },
+    "Lambda - Cleanup Job - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-map-intersection-exporter-export"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    },
+    "Lambda - Initiate Job - MapEditor - Refresh Intersections MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "INITIATE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-intersections-mv",
+            "image": "${jsondecode(sfn_service_versions)["MapEditor"]["image"]}:${jsondecode(sfn_service_versions)["MapEditor"]["version"]}",
+            "julia_function": "MapEditor.App.step_refresh_mv_general_list([:mm_intersection_mv])",
+            "julia_module": "MapEditor",
+            "env_prefix": "${env_prefix}",
+            "k8s_microservice_name": "map-editor",
+            "port": "6703",
+            "cpu_limits": "${cpu_medium}",
+            "memory_limits": "${memory_xlarge}",
+            "cpu_requests": "${cpu_small}",
+            "memory_requests": "${memory_large}"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Wait - MapEditor - Refresh Intersections MV"
+    },
+    "Wait - MapEditor - Refresh Intersections MV": {
+      "Type": "Wait",
+      "Seconds": 15,
+      "Next": "Lambda - Monitor Job - MapEditor - Refresh Intersections MV"
+    },
+    "Lambda - Monitor Job - MapEditor - Refresh Intersections MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload": {
+          "mode": "MONITOR",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-intersections-mv"
+          }
+        },
+        "FunctionName": "${lambda_function_arn}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Choice - MapEditor - Refresh Intersections MV"
+    },
+    "Choice - MapEditor - Refresh Intersections MV": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Success",
+          "Next": "SNS - MapIntersectionExporter - Run Calculate Intersections"
+        },
+        {
+          "Variable": "$.Payload.job_status",
+          "StringMatches": "Running",
+          "Next": "Wait - MapEditor - Refresh Intersections MV"
+        }
+      ],
+      "Default": "Lambda - Cleanup Job - MapEditor - Refresh Intersections MV"
+    },
+    "SNS - MapIntersectionExporter - Run Calculate Intersections": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${sns_arn}",
+        "Message": {
+          "trigger_source": "MMIOsmDeltaLoad"
+        }
+      },
+      "Next": "SuccessState"
+    },
+    "Lambda - Cleanup Job - MapEditor - Refresh Intersections MV": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${lambda_function_arn}",
+        "Payload": {
+          "mode": "DELETE",
+          "job_params": {
+            "namespace": "${namespace}",
+            "name": "${sfn_definition_prefix}-editor-refresh-intersections-mv"
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "FailState"
+    }
+  }
+}

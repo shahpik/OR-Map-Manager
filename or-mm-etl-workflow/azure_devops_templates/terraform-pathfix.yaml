@@ -1,0 +1,33 @@
+parameters:
+  name: ''
+  path: ''
+  env: ''
+
+steps:
+  - task: Bash@3
+    name: '${{ parameters.name }}'
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo ${{ parameters.env }}
+        echo "Moving $(Agent.BuildDirectory)/${{ parameters.path }}/* to $(Build.SourcesDirectory)"
+        mv $(Agent.BuildDirectory)/${{ parameters.path }}/* $(Build.SourcesDirectory)
+        # Devops loses the +x bit https://github.com/microsoft/azure-pipelines-tasks/issues/6364#issuecomment-569304870
+        root_path=$(Build.SourcesDirectory)
+        echo "Calling find '$root_path' -type f -print0 | xargs -0 chmod 644"
+        find $root_path -type f -print0 | xargs -0 chmod 644
+        echo "Calling find '$root_path' -type d -print0 | xargs -0 chmod 755"
+        find $root_path -type d -print0 | xargs -0 chmod 755
+        echo "Calling find '$root_path' -type s -print0 | xargs -0 chmod 777"
+        find $root_path -type s -print0 | xargs -0 chmod 755
+        echo 'Calling find $root_path -path *.terraform* -print0 | xargs -0 chmod 755'
+        find . -path '*.terraform*' -print0 | xargs -0 chmod 755
+  - task: Bash@3
+    displayName: 'List file permissions'
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Devops loses the +x bit https://github.com/microsoft/azure-pipelines-tasks/issues/6364#issuecomment-569304870
+        echo "Printing Working Directory: $(pwd)"
+        find . -ls
+        printenv

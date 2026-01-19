@@ -1,0 +1,169 @@
+# requires output formatted as per terraform-inventory.yaml
+
+parameters:
+  - name: name
+    type: string
+
+steps:
+  - bash: |
+      if [ -z "$NAME" ]; then
+        echo "##vso[task.logissue type=error;]Missing template parameter \"name\""
+        echo "##vso[task.complete result=Failed;]"
+      fi
+
+      if [ -z "$INVENTORY" ]; then
+        echo "##vso[task.logissue type=error;]This task must run after terraform-inventory.yaml which sets the 'inventory' variable"
+        echo "##vso[task.complete result=Failed;]"
+      fi
+    env:
+      NAME: ${{ parameters.name }}
+    displayName: Check for required parameters
+
+  - task: Bash@3
+    name: '${{parameters.name}}'
+    displayName: 'Terraform plan'
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "##[debug]Received the following input for terraform inventory:"
+        echo "##[debug]$INVENTORY"
+
+        echo "##[debug]Length of directories is $(echo $INVENTORY | wc -w)"
+        echo "##[debug]$INVENTORY"
+
+        tfnochange=""
+        tfchange=""
+        tferror=""
+
+        for directory in $INVENTORY
+        do
+          aws configure list-profiles
+          aws sts get-caller-identity
+          terraform -chdir=${directory} init
+
+          ec=0
+          terraform -chdir=${directory} plan -detailed-exitcode -out tfplan -lock=false || ec=$?
+
+          if [ $ec -eq 0 ]; then
+            tfnochange="${tfnochange}${directory}\n"
+          elif [ $ec -eq 1 ]; then
+            tferror="${tferror}${directory}\n"
+            echo "##[debug]Error with $directory, exit code is $ec."
+          elif [ $ec -eq 2 ]; then
+            tfchange="${tfchange}${directory}\n"
+          else
+            echo "##vso[task.logissue type=error;]Error:Unknown exit code ${ec} for plan in ${directory}."
+            echo "##vso[task.complete result=Failed;]"
+          fi
+
+        done
+        if [ -n "$tfnochange" ]; then
+          echo "============= TF NO CHANGE ============="
+          echo -e "${tfnochange}"
+        fi
+
+        if [ -n "$tfchange" ]; then
+          echo "=============  TF CHANGE   ============="
+          echo -e "${tfchange}"
+        fi
+
+        if [ -n "$tferror" ]; then
+          echo "=============   TF ERROR   ============="
+          echo -e "${tferror}"
+
+          echo "##vso[task.logissue type=error;]Error: tferror variable is not an empty string... exiting."
+          echo "##vso[task.complete result=Failed;]"
+          exit 1
+        fi
+
+        logurl="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=logs&j=$(System.JobId)&t=$(System.TaskInstanceId)"
+        printf '%s%s\n%s' "Setting build log url to variable " '$logurl' ". see:\n$logurl"
+        echo "##vso[task.setvariable variable=tfplanlogurl;]$logurl"
+    env:
+      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+  - bash: |
+        for directory in $INVENTORY; do echo "##### $directory"; find $directory -ls; echo ""; done
+        echo "$LOGURL"
+        echo "$TFPLANLOGURL"
+    displayName: Output file list
+
+  - task: PowerShell@2
+    # trigger plan attach if this is a PR build
+    condition: eq(variables['Build.Reason'], 'PullRequest')
+    name: PublishPlanToPR
+    displayName: 'Publish Plans To PR'
+    inputs:
+      targetType: 'inline'
+      script: |
+
+        $markdownBase = @"
+        `# Terraform plans
+
+        "@
+
+        $markdownRowFormat = @"
+        `#`# {0}
+        ``````{1}``````
+
+        "@
+
+        $planFiles = get-childitem -recurse -include tfplan | % { Write-Output (Resolve-Path $_) }
+
+        $builder = [System.Text.StringBuilder]::new()
+
+        [void]$builder.Append($markdownBase)
+
+        $planFiles | % {
+          Write-Output ("Path is {0}" -f $_)
+          Write-Output ("Split-Path is {0}" -f (Split-Path $_))
+          Push-Location (Split-Path $_)
+          Write-Output "Readable Plan is:"
+          terraform show tfplan -no-color -detailed-exitcode | Tee-Object -Variable consumablePlan
+          Write-Output "Exit code was $LastExitCode"
+          [void]$builder.AppendLine(($markdownRowFormat -f $_, ($consumablePlan | Out-String)))
+          Pop-Location
+        }
+
+        $tfplanlength = $builder.ToString().Length
+        $tfplanlogurl = "$(tfplanlogurl)"
+        # The variable $tfplanlogurl comes from the previous task
+        Write-Host "The character count of the terraform plans is ${tfplanlength} . Build logs, see:`r`n${tfplanlogurl}"
+        [void]$builder.AppendLine("The character count of the terraform plans is ${tfplanlength}. Build logs:")
+        [void]$builder.Appendline("")
+        [void]$builder.Appendline(${tfplanlogurl})
+
+        if ($builder.ToString().Length -ge 150000) {
+          Write-Host "The terraform plan/s are over 150000 characters, character count ${tfplanlength}, setting PR comment as link to build logs."
+          $commentcontent = "Terraform plan/s too large for comments `(${tfplanlength} characters`), please visit the build logs, see:`r`n${tfplanlogurl}"
+        }
+        else {
+          $commentcontent = $builder.ToString()
+        }
+
+        $body = @{
+          comments = @(
+            @{
+              parentCommentId = 0
+              content = $commentcontent
+              commentType = 1
+            }
+          )
+          status = 1
+        }
+
+        $payload = ($body | ConvertTo-Json)
+
+        Write-Output "##[debug]Payload is:"
+        Write-Output "##[debug]$payload"
+
+        $url = "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/git/repositories/$(Build.Repository.Name)/pullRequests/$(System.PullRequest.PullRequestId)/threads?api-version=5.1"
+        Write-Output "##[debug]Posting to $url"
+
+        Invoke-RestMethod -Uri $url -Method POST -Headers @{Authorization = "Bearer $(System.AccessToken)"} -Body $payload -ContentType application/json
+
+      pwsh: true
+    env:
+      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

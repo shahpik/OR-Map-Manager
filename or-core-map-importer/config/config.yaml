@@ -1,0 +1,509 @@
+HEX:
+  download_method: H3_HEX
+  download_h3_hex_config:
+    bounding_box: [[140.2, -33.5], [150.6, -39.7]] # top-left, bottom-right (lon,lat)
+    resolution: 6
+  file_format: GEOJSON
+  archive_s3: false
+
+OSM:
+  download_method: OSM
+  file_format: OSM
+  download_osm_config:
+    #place_name: "Victoria, Australia"
+    overpass_filters: |
+      area["ISO3166-2"="AU-VIC"]->.searchArea;
+      way
+        ["highway"]
+        ["motorcar"!~"no"]
+        ["area"!~"yes"]   
+        ["highway"!~"path|steps|corridor|elevator|escalator|proposed|bridleway|abandoned|platform|raceway"]
+        ["access"!~"private"]
+        ["service"!~"parking|parking_aisle|private|emergency_access"](area.searchArea);
+      >;
+
+VICMAP_TRANSPORT:
+  download_method: ARCGIS_REST
+  download_rest_config:
+    url: https://services6.arcgis.com/GB33F62SbDxJjwEL/ArcGIS/rest/services/Vicmap_Transport/FeatureServer/1/query
+    request_method: GET
+    query: 
+      where: '(("left_locality" NOT LIKE ''%(NSW)%'' AND "right_locality" NOT LIKE ''%(NSW)%'')
+AND ("left_locality" NOT LIKE ''%(SA)%'' AND "right_locality" NOT LIKE ''%(SA)%''))'
+      outFields: '*'
+      returnGeometry: 'true'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+DECLARED_NETWORK:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+CUSTOM_SEED_FILE:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+CUSTOM_ATTRIBUTE:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  file_format: CSV
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+SOURCE_VICMAP_TRANSPORT:
+  download_method: ARCGIS_REST
+  download_rest_config:
+    url: https://services6.arcgis.com/GB33F62SbDxJjwEL/ArcGIS/rest/services/Vicmap_Transport/FeatureServer/1/query
+    request_method: GET
+    query: 
+      where: '(("left_locality" NOT LIKE ''%(NSW)%'' AND "right_locality" NOT LIKE ''%(NSW)%'')
+AND ("left_locality" NOT LIKE ''%(SA)%'' AND "right_locality" NOT LIKE ''%(SA)%''))'
+      outFields: '*'
+      returnGeometry: 'true'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+SOURCE_OSM:
+  download_method: OSM
+  file_format: OSM
+  download_osm_config:
+    #place_name: "Victoria, Australia"
+    overpass_filters: |
+      area["ISO3166-2"="AU-VIC"]->.searchArea;
+      way
+        ["highway"]
+        ["motorcar"!~"no"]
+        ["area"!~"yes"]   
+        ["highway"!~"path|steps|corridor|elevator|escalator|proposed|bridleway|abandoned|platform|raceway"]
+        ["access"!~"private"]
+        ["service"!~"parking|parking_aisle|private|emergency_access"](area.searchArea);
+      >;
+
+
+# The following DataShare sources are currently not in use.
+
+LOCALITY:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://services6.arcgis.com/GB33F62SbDxJjwEL/ArcGIS/rest/services/Vicmap_Admin/FeatureServer/11//query
+    request_method: GET
+    query: 
+      where: '1=1'
+      outFields: '*'
+      returnGeometry: 'true'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+LGA:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://services6.arcgis.com/GB33F62SbDxJjwEL/ArcGIS/rest/services/Vicmap_Admin/FeatureServer/9//query
+    request_method: GET
+    query: 
+      where: '1=1'
+      outFields: '*'
+      returnGeometry: 'true'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+BUS:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_api_config:
+    url: ""
+    request_method: GET
+    headers: {}
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}  
+
+TRAM:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_api_config:
+    url: ""
+    request_method: GET
+    headers: {}
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+TTMC:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_api_config:
+    url: ""
+    request_method: GET
+    headers: {}
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+FEDERAL_ELECTORATE:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_api_config:
+    url: ""
+    request_method: GET
+    headers: {}
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+RESPONSIBLE_AUTHORITY:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_api_config:
+    url: ""
+    request_method: GET
+    headers: {}
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+LGA_CONTACT:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_api_config:
+    url: ""
+    request_method: GET
+    headers: {}
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}     
+
+SSD:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://geo.abs.gov.au/arcgis/rest/services/ASGC2001/SSD/FeatureServer/0/query
+    request_method: GET
+    query:     
+      where: 'ssd_name is not null'
+      geometryType: 'esriGeometryPolygon'
+      spatialRel: 'esriSpatialRelIntersects'
+      Units: 'esriSRUnit_Foot'
+      returnGeometry: 'true'
+      returnDistinctValues: 'false'
+      returnIdsOnly: 'false'
+      returnCountOnly: 'false'
+      returnExtentOnly: 'false'
+      returnZ: 'false'
+      returnM: 'false'
+      multipatchOption: 'xyFootprint'
+      returnTrueCurves: 'false'
+      returnExceededLimitFeatures: 'false'
+      returnCentroid: 'false'
+      timeReferenceUnknownClient: 'false'
+      sqlFormat: 'none'
+      featureEncoding: 'esriDefault'
+      f: 'geojson'
+      resultRecordCount: '2000'
+      outFields: '*'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+  
+SAFETY_CAMERAS:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_api_config:
+    url: ""
+    request_method: GET
+    headers: {}
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+POSTCODE:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://services6.arcgis.com/GB33F62SbDxJjwEL/ArcGIS/rest/services/Vicmap_Admin/FeatureServer/14/query
+    request_method: GET
+    query: 
+      where: '1=1'
+      outFields: '*'
+      returnGeometry: 'true'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+      geometryType: 'esriGeometryEnvelope'
+      spatialRel: 'esriSpatialRelIntersects'
+      resultType: 'none'
+      Distance: '0.0'
+      units: 'esriSRUnit_Meter'
+      returnGeodetic: 'false'
+      returnCentroid: 'false'
+      featureEncoding: 'esriDefault'
+      multipatchOption: 'xyFootprint'
+      applyVCSProjection: 'false'
+      returnIdsOnly: 'false'
+      returnUniqueIdsOnly: 'false'
+      returnCountOnly: 'false'
+      returnExtentOnly: 'false'
+      returnQueryGeometry: 'false'
+      returnDistinctValues: 'false'
+      cacheHint: 'false'
+      returnZ: 'false'
+      returnM: 'false'
+      returnExceededLimitFeatures: 'true'
+      sqlFormat: 'none'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+  
+DTP_REGIONAL_BOUNDARIES:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://services2.arcgis.com/18ajPSI0b3ppsmMt/ArcGIS/rest/services/Open_Data_DoT_Regions/FeatureServer/0/query
+    request_method: GET
+    query: 
+      where: '1=1'
+      outFields: '*'
+      returnGeometry: 'truee'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+      geometryType: 'esriGeometryEnvelope'
+      spatialRel: 'esriSpatialRelIntersects'
+      resultType: 'none'
+      distance: '0.0'
+      units: 'esriSRUnit_Meter'
+      returnGeodetic: 'false'
+      returnGeometry: 'true'
+      returnCentroid=: 'false'
+      featureEncoding: 'esriDefault'
+      multipatchOption: 'xyFootprint'
+      applyVCSProjection: 'false'
+      returnIdsOnly: 'false'
+      returnUniqueIdsOnly: 'false'
+      returnCountOnly: 'false'
+      returnExtentOnly: 'false'
+      returnQueryGeometry: 'false'
+      returnDistinctValues: 'false'
+      cacheHint: 'false'
+      returnZ: 'false'
+      returnM: 'false'
+      returnExceededLimitFeatures: 'true'
+      sqlFormat: 'none'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+STATE_LOWER_HOUSE:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://services6.arcgis.com/GB33F62SbDxJjwEL/ArcGIS/rest/services/Vicmap_Admin/FeatureServer/15//query
+    request_method: GET
+    query: 
+      where: '1=1'
+      outFields: '*'
+      returnGeometry: 'true'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+STATE_UPPER_HOUSE:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://services6.arcgis.com/GB33F62SbDxJjwEL/ArcGIS/rest/services/Vicmap_Admin/FeatureServer/16//query
+    request_method: GET
+    query: 
+      where: '1=1'
+      outFields: '*'
+      returnGeometry: 'true'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+MELWAY:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://services2.arcgis.com/18ajPSI0b3ppsmMt/ArcGIS/rest/services/Melway_Grids/FeatureServer/0/query
+    request_method: GET
+    query: 
+      where: '1=1'
+      geometryType: 'esriGeometryEnvelope'
+      spatialRel: 'esriSpatialRelIntersects'
+      resultType: 'none'
+      distance: '0.0'
+      Units: 'esriSRUnit_Meter'
+      returnGeodetic: 'false'
+      outFields: '*'
+      returnGeometry: 'true'
+      returnCentroid: 'false'
+      featureEncoding: 'esriDefault'
+      multipatchOption: 'xyFootprint'
+      applyVCSProjection: 'false'
+      returnIdsOnly: 'false'
+      returnUniqueIdsOnly: 'false'
+      returnCountOnly: 'false'
+      returnExtentOnly: 'false'
+      returnQueryGeometry: 'false'
+      returnDistinctValues: 'false'
+      cacheHint: 'false'
+      resultRecordCount: '2000'
+      returnZ: 'false'
+      returnM: 'false'
+      returnExceededLimitFeatures: 'true'
+      sqlFormat: 'none'
+      f: 'pgeojson'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+VCSD:
+  download_method: ARCGIS_REST
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  download_rest_config:
+    url: https://services2.arcgis.com/18ajPSI0b3ppsmMt/ArcGIS/rest/services/VicRoads_Country_Street_Directory_Grids/FeatureServer/0//query
+    request_method: GET
+    query: 
+      where: '1=1'
+      outFields: '*'
+      returnGeometry: 'true'
+      f: 'pgeojson'
+      resultRecordCount: '2000'
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
+
+SES_REGION:
+  download_method: S3
+  download_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/raw
+  file_format: GEOJSON
+  archive_s3: true
+  archive_s3_config:
+    bucket: dtp-or-map-manager
+    location: map-importer/archive
+  postprocessing: {}
