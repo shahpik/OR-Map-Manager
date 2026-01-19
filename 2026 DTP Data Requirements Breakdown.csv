@@ -1,0 +1,265 @@
+﻿This document contains the Requirements sent by DTP for evaluation. It also contains some comments/questions by our team members which will give you a context of the application,,,,,,,,,,,,,
+Dimension,Feature,Feature Description,PDF Page,Scenario,Scenario Name,Scenario Description,Initial Size Estimate,Category,Potential GIS Support,Jemille Comments,Cody Comments,Fred Comments,Feroze Comments
+Consistency,2,"Consistency of Road Geometry in DTP-OSM
+Ensure that the geometry of all Priority roads* in DTP-OSM is consistent with the current OSM dataset.",10,5.1.2.1,Verify road segment geometries,"Given the DTP-OSM dataset of Priority road* segments
+And the OSM dataset as a reference
+When the geometry of each DTP-OSM road segment is compared to OSM
+Then at least 98% of Priority road* segments must have geometries consistent with OSM
+And consistent geometry is defined as segment vertices representing roads will be within 0.01m of the OSM feature geometry.
+*Note: Additional nodes created from segmentation should be excluded from this analysis.",S,Requires Clarification,,"JJ: This is aligned to the intent of MM current state. Need to clarify how DTP want to segment the network, as there is breakdown of OSM ways to align to VicMap segments built into the DTP OSM Network. What if an OSM way does not break at an intersection?","The only way I can see this metric being calculated is via node coordinate comparison between DTP and OSM networks. If 98% of nodes coordinates from OSM are present in DTP (within 0.01 m) then this would be met. However, I do not see how this metric is possible if comparing DTP features to OSM features, since DTP features are commonly different to OSM due to VicMap features alignment differences.
+I'm also unsure where in the process they intend this to go, i.e., is it a whole-network analysis after each update, or only on the features which have been updated in that changeset? Or is this an entirely separate process to running updates, kind of like a data quality review process.",,
+,,,,5.1.2.2,Reporting of geometry consistency,"Given the geometry comparison has been completed
+When the vendor delivers the DTP-OSM dataset
+Then a report must be provided showing:
+• Total number of Priority road* segments
+• Number and percentage of segments with geometries consistent with OSM
+• Any segments with inconsistent geometry, with potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",M,Requires Clarification,,JJ: REPORTING To date there has not been a specific reporting requirement for MM.  A delta report was created in the back end and made available to assist with troubleshooting. The repeated reporting requests throughout this document suggest that a reporting tool should be incorporated into the MM UI to help them use and navigate to areas that need their attention in MM. These could then be both scheduled at key stages of the process and also 'self serve' as required.,"As above, I do not know how point two is possible given differences in feature geometry due to VMT. Three could potentially be possible through automation, but it depends on what DTP intend by ""with potential reasons"" (whether they mean in-depth manual anaylsis, or automated messages generated in the matching process stating which 'rule' the feature didn't meet to be 'consistent', whatever that means as per above).",,
+,,,,5.1.2.3,Handle geometry inconsistencies,"Given geometry consistency is below 98%
+When the report is reviewed
+Then the vendor must identify segments with inconsistent geometries
+And provide a brief explanation for the cause
+And propose corrective actions for review by DTP’s geospatial team
+Note: Priority road* is defined in Appendix 1",M,New Scope,,"JJ: METRICS This will be difficult and expensive. Especially when using open source data like OSM. If reporting is available in the UI, along with the underlying data sets, this will be easier for the user to look into in MM.","As above, this sounds like they mean manual review which is not feasible without dedicated support team.",,
+,3,"Verification of Road Name Attributes in DTP-OSM
+Ensure that DTP-OSM includes road name attributes for all Priority road* from the current Vicmap dataset, with at least 99%
+coverage.",10,5.1.3.1,Verify inclusion of road name attributes,"Given the current Vicmap dataset of Priority road* segments
+And the DTP-OSM dataset generated from it
+When the road name attributes in DTP-OSM are reviewed
+Then at least 99% of unique road names in Vicmap must be present in DTP-OSM",S,New Scope,,"JJ: We will need to determine clear business rules with DTP. We could adjust the algorithm to also look to adjacent features, to see if a nearby road name fits. Could look at 'poorer' matches. Could also revert to the OSM road name if a suitable VicMap road name cannot be confidently determined. The 99% metric is a new requirement.","This sounds like a one-time processing of the network assigning all VMT name attributes to the closest match DTP feature. We'd also need to ensure the update logic doesn't impact this metric on future source updates, but overall this seems like DTP are asking for a once-off 'repair' of the network to ensure VMT names are present.",,
+,,,,5.1.3.2,Reporting of road name coverage,"Given the review of road name attributes has been completed
+When the vendor delivers the DTP-OSM dataset
+Then a report must be provided showing:
+• Total number of unique road names in Vicmap
+• Number and percentage of road names represented in DTP-OSM
+• Any missing road names, with potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.
+Note: Priority road* is defined in Appendix 1",M,New Scope,,JJ: Refer to reporting comment above.,"Most of these are easy enough to do, but the ""potential reasons"" is again tricky depending on the level of specificity DTP is loking for. Simple ""Name from VMT missing in DTP due to no geomtery within 100 m"" or something like that, but that really depends on the process we decide on for assigning names (e.g., we might just decide that all VMT features must align with at least one DTP feature, no matter the quality of the match, in which case this metric is no longer applicable since all VMT features are matched).",,
+,4,"Comparison of Road Intersection Points with Source Datasets
+Ensure that DTP-OSM correctly creates intersection points where two or more roads with different names intersect, consistent with
+the source datasets.",11,5.1.4.1,Verify creation of intersection points,"Given the current Vicmap and OSM datasets containing Priority roads* segments
+And the DTP-OSM dataset generated from them
+When locations are analysed for intersections of two or more roads with different names
+Then DTP-OSM must include an intersection point at 100% of those locations
+And “unnamed” roads should not trigger this intersection creation",S,Initial Intent,,JJ: This is aligned to the intent of MM current state. Need to clarify the specific concern and see if there are examples available. We could review the current logic with them as some OSM road types were excluded from the intersection detection. The 100% metric is new scope and poorly defined.,,,
+,,,,5.1.4.2,Reporting of intersection point comparison,"Given the intersection point comparison has been completed
+When the vendor delivers the DTP-OSM dataset
+Then a report must be provided showing:
+• Any missing intersection points, with potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs",XXL,New Scope,,"JJ: I'm not sure how you'd run a report (query) to cover this. If we haven't been able to identify an intersection, then it's not considered by the logic to be an intersection and is therefore not 'missing'.","I agree with Jemille, I'm not sure how it would be possible to 'find' missing intersections without manually traversing the map and looking for places where you'd expect an intersection to be but there isn't one.",,
+,,,,5.1.4.3,Handle missing intersection points,"Given intersection point creation is below 100%
+When the report is reviewed
+Then the vendor must identify locations where intersection points are missing
+And provide a brief explanation for the cause
+And propose corrective actions for review by DTP’s geospatial team
+Note: Priority roads* are defined in Appendix 1",XXL,New Scope,,JJ: How do you determine what 100% is? I don't think this is possible.,,,
+,5,"Consistency of Custom Attributes Over Time in DTP-OSM
+Ensure that custom attributes from the previous version of DTP-OSM are retained for features whose geometry has not changed.",12,5.1.5.1,Verify persistence of custom attributes,"Given the previous version of the DTP-OSM dataset
+And the current version of the DTP-OSM dataset
+When features are compared between versions
+Then 100% of features with unchanged geometry must retain their custom attributes from the previous version",XS,Initial Intent,,JJ: This is aligned to the intent of MM current state. Need to clarify the specific concern and see if there are examples available. The 100% metric is new and would require further definition.,"This should already be the case (excepting for any bugs, in which case this is simple enough to fix by just fixing those bugs).",,
+,,,,5.1.5.2,Reporting of attribute persistence,"Given the comparison between DTP-OSM versions has been completed
+When the vendor delivers the updated dataset
+Then a report must be provided showing:
+• Total number of features with unchanged geometry
+• Number and percentage of those features that retained their custom attributes
+• Any features where attributes were not retained, with potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",S,Requires Adjustment,,"JJ: Refer to reporting comment above.
+
+Could be an adjustment to the 'Delta' report.",This should not be applicable since it should be 100% every time (in this specific case where geometry does not change).,,
+,,,,5.1.5.3,Handle attribute persistence below target,"Given custom attribute persistence is below 100%
+When the report is reviewed
+Then the vendor must identify features where attributes were not retained
+And provide a brief explanation for the cause
+And propose corrective actions for review by DTP’s geospatial team",S,New Scope,,"JJ: With changes in geometry very likely to occur, I don't understand how persistence can be measured (as is not necessarily 1:1)",,,
+,6,"Consistency of Custom Attributes for Changed Features Over Time in DTP-OSM
+Ensure that custom attributes from the previous version of DTP-OSM are retained, where possible, for features whose geometry has changed.",12,5.1.6.1,Verify persistence of custom attributes for changed features,"Given the previous version of the DTP-OSM dataset
+And the current version of the DTP-OSM dataset
+When features with changed geometry are identified
+Then at least 95% of those features must retain their custom attributes from the previous version, where the attribute remains logically applicable
+And consistent geometry is defined as segment vertices representing roads will be within 5.00 metres of the OSM feature geometry.
+Note that additional nodes created from segmentation should be excluded from this analysis",M,Initial Intent,,JJ: This is aligned to the intent of MM current state. It is worth noting that any change to the geometry of an individual feature could impact that ability to apply the attributes. Can clarify the business rules with the client. The 95% metric is new scope and would require further definition.,"The definition of ""consistent geometry"" is not used in the statement about 95% so I'm not sure this is possible without that caveat. If this is meant to say that 95% of updated features whose nodes are within 5 m of the previous DTP network must retain custom attributes, then I think that is already the intent, but not defined as clearly in code but should be possible nonetheless.
+Also it mentions consistent with OSM, yet we're comparing DTP-OSM versions so not sure how that comes into it.",,
+,,,,5.1.6.2,Reporting of attribute persistence for changed features,"Given the comparison between DTP-OSM versions has been completed
+When the vendor delivers the updated dataset
+Then a report must be provided showing:
+• Total number of features with changed geometry
+• Number and percentage of those features that retained their custom attributes
+• Any features where attributes were not retained, with potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",M,Requires Adjustment,,"JJ: Refer to reporting comment above.
+
+Could be an adjustment to the 'Delta' report.",,,
+,,,,5.1.6.3,Handle attribute persistence below target,"Given custom attribute persistence for changed features is below 95%
+When the report is reviewed
+Then the vendor must identify features where attributes were not retained
+And provide a brief explanation for the cause
+And propose corrective actions for review by DTP’s geospatial team",M,New Scope,,"JJ: With changes in geometry very likely to occur, I don't understand how persistence can be measured (as is not necessarily 1:1)",,,
+,7,"Deterministic Map Matching Output in DTP-OSM
+Ensure that running map matching on test datasets produces identical outputs across runs.",13,5.1.7.1,Verify identical outputs for repeated test runs,"Given a test dataset in DTP-OSM
+And the map matching process is executed multiple times on the same dataset
+When outputs from each run are compared
+Then 0% of attributes or features should change between runs",XS,New Scope,,"JJ: Fixed test data sets could be useful (especially if not full network) for consistent validation as code updates occur. If there is a specific concern they are trying to address, we could tailor the test to suit. Testing of full processes are time consuming and a focused test window would add $$.","TBH I'm pretty sure the map matching algorithm and also the process as a whole is deterministic. I supect they are referring to when prod and pre-prod and test would deviate, and that’s because they would run at different times, pulling in different data consequently.
+
+I'm also not sure whether they mean this to be a regular scheduled test? Or a once-off? Because if they want us to run the process twice, or more, times for each scheduled source update, then that will dramtically increase the runtime, also I think it would be unreasonable if the algorithm and process is proven to be determininstic. I think there is some missing context here.",,
+,,,,5.1.7.2,Reporting of consistency across test runs,"Given multiple map matching runs have been completed
+When the vendor delivers the test outputs
+Then a report must be provided showing:
+• Total number of features in the test dataset
+• Number and percentage of features and attributes that remained identical across runs
+• Any changes detected, with potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",,New Scope,,JJ: Refer to reporting comment above.,,,
+,,,,5.1.7.3,Handle unexpected changes in test outputs,"Given any feature or attribute changes are detected between runs
+When the report is reviewed
+Then the vendor must identify the features or attributes that changed
+And provide a brief explanation for the cause
+And propose corrective actions for review by DTP’s geospatial team",,New Scope,,JJ: Refer to metrics comment above.,,,
+Completeness,1,"Produce a Complete and Connected Road Network
+Ensure that DTP-OSM delivers a fully connected, topologically valid, and complete network that supports downstream systems,
+location referencing, routing, validation processes, and manual editing workflows.",13,5.2.1.1,Network is fully connected with no breaks or gaps,"Given the map matching process integrates OSM, Vicmap and DTP-managed data
+And all required fields, domains, defaults and class codes have been validated
+And attribute and geometry persistence rules have been applied
+And custom attributes are retained where features are unchanged
+And topology checks confirm correct spatial relationships
+When the DTP-OSM network is generated
+Then the resulting dataset must form a complete, connected network with no unintended gaps or breaks
+And all road segments must connect where their geometry and attributes indicate they should
+And no isolated segments may exist unless explicitly defined as standalone features
+And all DTP managed roads must be present with required attributes populated
+And the network must support location referencing operations, including routing and linear referencing across multiple connected segments",XL,New Scope,Yes,"JJ: This is aligned to the intent of MM current state. There may be some specific edge cases that they would like to address. Some specific examples would be helpful. As we adopt the OSM geometry for the DTP-OSM network, we assume that is topologically valid, without including specific checks of OSM's geometry.",,,
+,,,,5.2.1.2,Connectivity maintained across updates,"Given a previous version of DTP-OSM is available
+And the new output incorporates updated OSM and Vicmap data no more than two weeks old
+And unchanged features retain their custom and core attributes
+And changed features retain attributes at the required persistence rate
+When the new version is compared with the previous
+Then network connectivity must be equal to or improved relative to the previous version
+And no connectivity regressions may be introduced by the map matching process
+And any required manual edits must be completed within the allowed effort limits
+And exceptions must be recorded in the standard reporting format.",XL,New Scope,Yes,"JJ: This will depend on the type and extent of changes included in the update(s), especially as OSM is open source.",,,
+,8,"Completeness of Required Attributes in DTP-OSM
+Ensure that all required attributes listed in Appendix 1 are present for every feature in the DTP-OSM dataset.",14,5.2.8.1,Verify presence of required attributes,"Given the DTP-OSM dataset has been generated
+And the list of required attributes is defined in Appendix 1
+When each feature in DTP-OSM is reviewed
+Then all required attributes from Appendix 2 must be present for every feature
+And no required attribute may be missing",L,Requires Clarification,,JJ: There are required attributes that are often 'empty' such as 'Road Name 3'. Should an empty string be included so that it is clear that it is intentionally empty? Clarification is required from DTP.,"Deloitte doesn't control the data in VicMap so cannot guarantee that all VicMap features will have all required attributes. This also  implies that we would need to do a one-time pass through of the network to assign all features attributes which currently has none, and I guess we'd just assign to the closest possible VicMap match?",,
+,,,,5.2.8.2,Reporting of attribute completeness,"Given the completeness review has been completed
+When the vendor delivers the DTP-OSM dataset
+Then a report must be provided showing:
+• Total number of features reviewed
+• Any features missing one or more required attributes
+• The names of missing attributes and potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",M,New Scope,,"JJ: Depends on how empty values are dealt with, but refer to reporting comment above.",,,
+,,,,5.2.8.3,Handle missing attributes,"Given any required attributes are missing from any feature
+When the report is reviewed
+Then the vendor must identify the cause of the missing attributes
+And propose corrective actions for review by DTP’s geospatial team",L,New Scope,,JJ: I'm not sure how we determine the cause as part of the process and has not been considered in the code so far.,,,
+Timeliness / Currency,9,"Completeness of Map Matching Exception Reports in DTP-OSM
+Ensure that map matching generates exception reports so data managers can review and act on gaps or issues.",14,5.3.9.1,Verify generation of exception reports,"Given DTP-OSM is processing the road network
+When map matching encounters incomplete, conflicting, or uncertain data
+Then exception reports must be generated for data managers to review
+And all relevant exception details must be included in the reports",M,New Scope,,JJ: Refer to reporting comment above.,"But how? What do they want to happen? Make no changes there? Make the change but highlight as an uncertain change that they can reject?
+
+I think this is already possible with the current report, it's just not a very pleasant process given how many matches are uncertain and that it's not a feature built into the frontend.",,
+,,,,5.3.9.2,Reporting of exceptions,"Given map matching has been completed
+When the vendor delivers the DTP-OSM dataset
+Then a report must be provided showing:
+• Total number of exceptions identified
+• Types of exceptions and affected features
+• Any patterns or clusters of data issues
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",L,New Scope,,JJ: Refer to reporting comment above.,,,
+,,,,5.3.9.3,Handle missing or incomplete exception reports,"Given any exceptions are not captured in the report
+When the report is reviewed
+Then the vendor must identify the cause
+And propose corrective actions for review by DTP’s geospatial team",XXL,New Scope,,JJ: I'm not sure how we determine the cause as part of the process and has not been considered in the code so far.,If not captured in the report then I don't know how we would identify the cause of an exception?,,
+,10,"Timeliness and Currency of DTP-OSM Updates
+Ensure that map matching enables DTP-OSM to incorporate recent changes from OSM and Vicmap while meeting processing and
+manual review time requirements.",15,5.3.10.1,Incorporate recent source changes,"Given OSM and Vicmap provide updated road network data
+And changes in each source may be up to two weeks old
+When the map matching process is executed
+Then DTP-OSM must incorporate all changes that are no more than two weeks old
+And the resulting dataset must reflect the latest available source geometry and attributes",,Requires Clarification,,JJ: The current process requires DTP to approve the updates in MM before the revised DTP OSM is committed and available to down stream consumers. Any timeliness criteria would need to consider the end-to-end process as well as any interaction by DTP in the UI (or otherwise) that could impact timeliness. ,"This would be reliant on DTP approving a changeset in time, not sure how DTT are supposed to meet this requirement given DTPs 'review' stage is their responsibility and we have no control over it.",,
+,,,,5.3.10.2,Map matching processing time meets requirement,"Given the vendor has initiated a complete map matching run
+When the algorithm is executed
+Then the total processing time must be less than 24 hours
+And the vendor must report the start and end time of the processing run",,Possible Enhancement,,"JJ: This aligns with the intial intention of MM, but with evolving requirements, became close to 2 days for a single update when the process executed as expected. It is also worth noting that 'Map Matching' (i.e. the running of the Map Matching algorithm) is part of an OSM or a VicMap update process, but does not represent the entire update process. Would need to clarify this with DTP.","This is not feasible with the current process design. I think a modified map matching algorithm tailored to updating the network (vs the previous goal of matching distinct networks) would go a long way to not only inmproving the runtime, but also the simplicity of the design and would support easier maintenance in future.",,
+,,,,5.3.10.3,Handle breaches of timeliness,"Given processing time exceeds 24 hours
+When the report is reviewed
+Then the vendor must identify the cause of the delay
+And propose corrective actions for review by DTP’s geospatial team",,New Scope,,JJ: Failure or 'stalled' process logs could be reviewed to ensure that operate understand when an update is not executing as expected.,"This is trivial for manual intervention, but automation would also tehcnically be possible I think.",,
+Fit For Purpose,11,"Fit for Purpose of DTP-OSM for LRS
+Ensure that DTP-OSM contains all required attributes and geometry for use in the Linear Referencing System (LRS).",15,5.4.11.1,Verify required attributes are present,"Given DTP-OSM has been produced from source datasets and custom attributes
+When the dataset is reviewed for attribute completeness
+Then all attributes required for LRS use must be present
+And the vendor must provide a report showing:
+• Total number of features reviewed
+• Any features missing required attributes
+• The names of missing attributes and potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",M,Possible Enhancement,,JJ: No further comment. Covered above. ,"Providing potential reasons is not reasonable given the number of features that might be missing attributes could easily exceed hundreds of thousands.
+
+Regarding the attribute completeness, we can certainly take a more relaxed approach to assigning attributes to features in the map matching process, however this would go against previous guidance from DTP that they prefer correctness of attributes assigned over completeness.",,
+,,,,5.4.11.2,Verify required geometry is present,"Given DTP-OSM includes road geometry from OSM, Vicmap, and custom edits
+When the dataset is reviewed for geometric suitability
+Then all geometry required for LRS use must be present
+And the vendor must provide a report showing:
+• Total number of features reviewed
+• Any features missing required geometry or connectivity issues
+• Potential reasons for missing geometry
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",M,Requires Clarification,,JJ: No further comment. Covered above. ,"I can think of several approaches for determining 'gaps' in geometry, however all of them would have a certain level of heuristic that would also drastically increase the runtime. As for finding 'missing' geometry, I don't understand? Missing from what? OSM?",,
+,,,,5.4.11.3,Handle missing attributes or geometry,"Given any required attributes or geometry are missing
+When the report is reviewed
+Then the vendor must identify the cause
+And propose corrective actions for review by DTP’s geospatial team",L,Requires Clarification,,JJ: What is missing? DTP-OSM adopts the OSM geometry.,,,
+Accuracy,12,"Accuracy of Attribute Assignment in DTP-OSM
+Ensure that attributes are correctly matched to the corresponding road segments, minimising misassignment from intersecting
+roads.",16,5.5.12.1,Verify attribute assignment accuracy,"Given the DTP-OSM dataset of Priority roads* segments
+And intersecting road segments are present in the dataset
+When attributes are assigned to each road segment
+Then less than 1% of features may have attributes incorrectly matched from intersecting roads",,Requires Clarification,,JJ: Is this a one off review by DTP as code updates are tested? I'm unsure how we could do this.,I do not know how this metric would be calculable.,,
+,,,,5.5.12.2,Reporting of attribute assignment accuracy,"Given the attribute assignment review has been completed
+When the vendor delivers the DTP-OSM dataset
+Then a report must be provided showing:
+• Total number of features reviewed
+• Number and percentage of features with incorrectly matched attributes
+• Any patterns or clusters of misassigned attributes, with potential reasons
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",,New Scope,,JJ: No further comment. Covered above. ,,,
+,,,,5.5.12.3,Handle incorrect attribute assignments,"Given any features are identified with incorrectly matched attributes
+When the report is reviewed
+Then the vendor must identify the cause of misassignment
+And propose corrective actions for review by DTP’s geospatial team",,New Scope,,"JJ: As the system is not designed to 'incorrectly match', I'm unclear how we could better automate 'missassignment'.",This would be an extreme amount of manual work.,,
+,13,"Accuracy of Road Attribute Consistency in DTP-OSM
+Ensure that road attributes are consistent along the road, allowing roads to be correctly built with minimal segmentation.",17,5.5.13.1,Verify attribute consistency along roads,"Given the DTP-OSM dataset of DTP-managed roads
+When each road is evaluated for attribute consistency
+Then roads should be able to be built for all DTP roads
+And fewer than 2 additional features should be created for each road due to attribute gaps",,New Scope,Yes,JJ: We would require some examples to understand the intent of this feature request. Detailed business rules will be required to ensure the netwrork remains topologically valid.,"Since discussing this with Jemille, I believe that I now understand what is being asked here. I suspect they desire an additional step in the map matching process which 'combines' ways together which share the same attributes. However, I think this is poorly worded since it does not make clear any exceptions for already-defined instances where a break is expected, i.e., at intersections, not to mention cases like where a speed changes (thus requiring a new feature with new, almost identical attributes). This would also add significant complexity when considering the existing map matching algorithm that we are working with, perhaps with a new, more refined algorithm this would be less troublesome, but currenlty I suspect adding this to the existing process would drastically increase the runtime.",,
+,,,,5.5.13.2,Reporting of road attribute consistency,"Given the road attribute consistency review has been completed
+When the vendor delivers the DTP-OSM dataset
+Then a report must be provided showing:
+• Total number of DTP-managed roads reviewed
+• Number of roads with attribute inconsistencies
+• Number of additional features created per roads due to gaps
+• Any patterns or reasons for inconsistencies
+• The report must be delivered within 24 hours in a structured, machine-readable format, and must include DTP-OSM unique feature IDs, OSM unique feature IDs, and, where applicable, Vicmap feature IDs.",,New Scope,,JJ: We would require some examples to understand the intent of this feature request.,,,
+,,,,5.5.13.3,Handle attribute inconsistencies along roads,"Given any roads are built with more than 2 additional features due to attribute gaps
+When the report is reviewed
+Then the vendor must identify the cause of inconsistencies
+And propose corrective actions for review by DTP’s geospatial team",,Requires Clarification,,JJ: We would require some examples to understand the intent of this feature request.,,,
+Functionality,14,"Targeted Area Updates Using Bounding Box Selection
+Ensure that users can define a geographic area of interest using a bounding box and update only the selected region while
+maintaining data integrity, connectivity, and consistency across the full DTP-OSM network.",17,5.6.14.1,User defines a bounding box to select an update area,"Given the user is viewing the DTP-OSM network in the Map Manager tool
+And the system supports selection of areas using an on-screen bounding box
+When the user draws a bounding box around a target area
+Then the system must identify all road segments and attributes that fall within or intersect the bounding box
+And the selection must be visually confirmed to the user
+And the system must prepare the selected features for targeted update processing.",XL,New Scope,,"JJ: This appears to describe that DTP would like to upload updates to small sections of the network. Would need to understand the use case better. I suspect this may be due to potential 'new roads' that are being constructed, but would need to clarify. This functionality does not currently exist in MM and could be high effort as introduces a new process.","This would be an extension onto the existing MM process. I suspect it is due to DTP wanting to be able to update, review, and submit to LRS changes in a specific region with the intent of not needing to consider changes made outside that region. I suspect most of the effort here would be in frontend, but the backend would also need to either introduce new step function processes to run in this case, or modify the existing step function, or (the better option) to rework the archicture to support these alternative paths better (e.g., a more general API not hardcoded step function processes). This would also require the functionality added to allow DTP to manually trigger updates which is not something that currenlty exists, it shouldn't be too hard, but we'd need to consider possible ramifications from this.",,
+,,,,5.6.14.2,Targeted updates are processed for the selected area,"Given a bounding box-based selection has been created
+And the selection contains all relevant geometry, attributes and identifiers
+When the user initiates an update for the selected area
+Then only the features within the bounding box must be re-processed, refreshed or overwritten
+And the map matching rules must be applied consistently to the selected features
+And only the necessary data from OSM, Vicmap and DTP sources must be consumed for this area
+And any changes introduced must comply with the required validation rules (fields, domains, defaults, attribute persistence).",L,New Scope,,JJ: As above.,,,
+,,,,5.6.14.3,Network integrity is maintained after partial updates,"Given a partial (bounding-box-based) update has been applied
+When the updated features are integrated back into the DTP-OSM network
+Then the full network must remain topologically connected
+And no new breaks, gaps or attribute inconsistencies may be introduced at the edges of the bounding box
+And unchanged surrounding features must retain their attributes
+And all integrity and consistency checks must be re-applied to the updated region and its immediate neighbours.",M,New Scope,,JJ: As above.,,,
