@@ -1,0 +1,4 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+MapEditor = "ba53b0f3-668c-48a1-95b6-ba9cf89cb1e5"
+DocumenterMarkdown = "997ab1e6-3595-5248-9280-8efb232c3433"

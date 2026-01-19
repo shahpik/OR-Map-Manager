@@ -1,0 +1,5 @@
+---
+apiVersion: v1
+description: Chart for redis (inspired by https://github.com/cortexproject/cortex-helm-chart)
+name: redis
+version: 0.1.0

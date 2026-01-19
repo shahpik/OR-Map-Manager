@@ -1,0 +1,101 @@
+set_global_client()
+
+@testset "Pipeline - Basic" begin
+    pipe = Pipeline()
+    @test length(pipe.resp) == 0
+    for _ in 1:1000
+        lrange("nothing", 0, -1; client=pipe)
+    end
+    @test length(pipe.resp) == 1000
+    result = execute(pipe)
+    @test result == fill([], 1000)
+    @test length(pipe.resp) == 0
+end
+
+@testset "Pipeline - Do Block" begin
+    result = pipeline() do pipe
+        for _ in 1:1000
+            lrange("nothing", 0, -1; client=pipe)
+        end
+    end
+    @test result == fill([], 1000)
+end
+
+if JedisCluster.GLOBAL_CLIENT[].cluster == false  # Redis cluster mode does not support MULTI EXEC across slots    
+    @testset "Pipeline - MULTI/EXEC" begin
+        no_filter_result = pipeline(; filter_multi_exec=false) do pipe
+            multi(; client=pipe)
+            for _ in 1:1000
+                lrange("nothing", 0, -1; client=pipe)
+            end
+            exec(; client=pipe)
+        end
+        @test length(no_filter_result) == 1002
+        @test no_filter_result[1] == "OK"
+        @test no_filter_result[2:length(no_filter_result)-1] == fill("QUEUED", 1000)
+        @test no_filter_result[end] == fill([], 1000)
+
+        filter_result = pipeline(; filter_multi_exec=true) do pipe
+            multi_exec(; client=pipe) do
+                for _ in 1:1000
+                    lrange("nothing", 0, -1; client=pipe)
+                end
+            end
+        end
+        @test length(filter_result) == 1
+        @test filter_result[1] == fill([], 1000)
+    end
+end
+
+@testset "Pipeline - Batching" begin
+    batch_size = 333
+    result = pipeline(batch_size) do pipe
+        for _ in 1:1000
+            lrange("nothing", 0, -1; client=pipe)
+        end
+    end
+    @test result == fill([], 1000)
+
+    batch_size = 3333
+    result = pipeline(batch_size) do pipe
+        for _ in 1:1000
+            lrange("nothing", 0, -1; client=pipe)
+        end
+    end
+    @test result == fill([], 1000)
+end
+
+@testset "Pipeline - Do Block - Ignore Response" begin
+    result = pipeline(ignore_response=true) do pipe
+        for i in 1:1000
+            set(string(i), string(i); client=pipe)
+        end
+    end
+    @test result == nothing
+
+    result = pipeline(ignore_response=false) do pipe
+        for i in 1:1000
+            get(string(i); client=pipe)
+        end
+    end
+    @test result == string.(collect(1:1000))
+end
+
+
+@testset "Pipeline - Batching - Ignore Response" begin
+    result = pipeline(100, ignore_response=true) do pipe
+        for i in 1001:2000
+            set(string(i), string(i); client=pipe)
+        end
+    end
+    @test result == nothing
+
+    result = pipeline(ignore_response=false) do pipe
+        for i in 1001:2000
+            get(string(i); client=pipe)
+        end
+    end
+    @test result == string.(collect(1001:2000))
+end
+
+flushall()

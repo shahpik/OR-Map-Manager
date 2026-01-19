@@ -1,0 +1,3 @@
+
+class ExperimentManagerException(Exception):
+    pass

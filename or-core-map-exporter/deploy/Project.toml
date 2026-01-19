@@ -1,0 +1,8 @@
+[deps]
+TestEnv = "1e6cf692-eddd-4d53-88a5-2d735e33781b"
+PackageCompiler = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
+MapExporter = "7b40b003-6061-48ce-afe2-4a59e711f7b1"
+
+[compat]
+TestEnv = "1.4"
+PackageCompiler = "1.7.0"

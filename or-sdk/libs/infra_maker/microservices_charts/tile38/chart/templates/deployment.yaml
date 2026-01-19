@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "name" . }}
+  labels:
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+    spec:
+      containers:
+      - name: tile38
+        env:
+          - name: ALLOW_EMPTY_PASSWORD
+            value: "yes"
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - tile38-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        ports:
+        - containerPort: 9851
+          name: tile38
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - tile38-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: 128Mi
+            cpu: 100m
+          limits:
+            memory: 512Mi
+            cpu: 200m
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60

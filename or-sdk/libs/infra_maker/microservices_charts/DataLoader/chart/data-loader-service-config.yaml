@@ -1,0 +1,47 @@
+init-functions:
+  loader-functions:
+    names:
+      - segment
+      - role
+      - user
+      - osm
+      - schedule
+loader-functions:
+  segment:
+    load-method: s3
+    download-parameters:
+      segment:
+        s3-bucket-name: #BUCKET
+        s3-file-key: data_loader/segment.csv
+  role:
+    load-method: s3
+    download-parameters:
+      role:
+        s3-bucket-name: #BUCKET
+        s3-file-key: data_loader/role.csv
+  user:
+    load-method: s3
+    download-parameters:
+      user:
+        s3-bucket-name: #BUCKET
+        s3-file-key: data_loader/user.csv
+    depends-on:
+      - role
+  osm:
+    load-method: s3
+    download-parameters:
+      osm:
+        s3-bucket-name: #BUCKET
+        s3-file-key: data_loader/military_rd_5km.osm
+    depends-on:
+      - segment
+  schedule:
+    load-method: s3
+    overwrite-local-files: true
+    download-parameters:
+      path:
+        s3-bucket-name: #BUCKET
+        s3-file-key: data_loader/path.csv
+      schedule-environment:
+        s3-bucket-name: #BUCKET
+        s3-file-key: data_loader/schedule_environment.csv

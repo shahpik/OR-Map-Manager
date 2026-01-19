@@ -1,0 +1,4 @@
+# Describes the image location and version
+image:
+  repository: tile38/tile38
+  tag: latest

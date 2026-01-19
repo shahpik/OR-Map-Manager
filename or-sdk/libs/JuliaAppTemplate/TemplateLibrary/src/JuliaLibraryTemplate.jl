@@ -1,0 +1,3 @@
+module JuliaLibraryTemplate
+
+end # module

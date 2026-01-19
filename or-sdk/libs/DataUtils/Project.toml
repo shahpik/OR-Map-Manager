@@ -1,0 +1,19 @@
+name = "DataUtils"
+uuid = "91e9304d-6ebf-4b25-b4ff-7a6cd56e5b4e"
+version = "0.1.14"
+
+[deps]
+Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
+
+[compat]
+CodecZlib = "0.7.0"
+DataFrames = "1.2.2"
+DataStructures = "0.18"
+TranscodingStreams = "0.9.5"
+julia = "^1"

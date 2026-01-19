@@ -1,0 +1,371 @@
+##
+## ###############################################################################################
+##
+## This software is part of Deloitte’s Optimal Reality Digital Twin.
+## Copyright (C) 2020, Deloitte Australia. All rights reserved.
+## Created Date: 30/06/2020
+## Technical Authority: Caleb Sawade
+## Engagement Owner: Sean McClowry smcclowry@deloitte.com.au
+##                   and Kellie Nuttall knuttall@deloitte.com.au
+##
+## ###############################################################################################
+##
+## Copyright (C) 2020, Deloitte Digital. All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+## list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+## this list of conditions and the following disclaimer in the documentation
+## and/or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its contributors
+## may be used to endorse or promote products derived from this software without
+## specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+## DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+## SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+## CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+## OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##
+
+# the default agent pool
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  repositories:
+    - repository: or-core-julia-registry
+      type: git
+      name: Optimal-Reality/or-core-julia-registry
+    - repository: or-sdk
+      type: git
+      name: Optimal-Reality/or-sdk
+    - repository: terraform
+      type: git
+      name: Optimal-Reality/env-or-client-dot-terraform
+
+# global variables
+variables:
+  artifactFeed: or-core-model-v2
+  buildUrl: $(System.TeamFoundationCollectionUri)/$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=results
+  workingDirectory: $(Build.SourcesDirectory)/or-core/microservices/JuliaAppTemplate
+  client: dot
+  IMAGE_NAME: or-cmp-julia-app-template-images
+  BUILD_TAG: $(Build.BuildId)
+  SERVICE_CONNECTION: or-mgt-admin
+  AWS_REGION: ap-southeast-2
+  DOCKER_BASE_REPO: or-cmp-base-alpine-julia
+  DOCKER_BASE_IMAGE_TAG: 1.6.2-87182
+
+# triggers - use these in combination with conditions to control the workflow
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - microservices/JuliaAppTemplate/*
+    exclude:
+      - microservices/JuliaAppTemplate/*.md
+      - microservices/JuliaAppTemplate/.gitignore
+      - microservices/JuliaAppTemplate/Makefile
+
+stages:
+  - stage: Build
+    displayName: "Build artifacts"
+    jobs:
+    - job: buildArtifacts
+      displayName: "Build Artifacts"
+      steps:
+        - checkout: self
+        - checkout: or-core-julia-registry
+        - checkout: or-sdk
+
+        - task: ECRPullImage@1
+          displayName: "Pull secured base image"
+          inputs:
+            awsCredentials: '$(SERVICE_CONNECTION)'
+            regionName: '$(AWS_REGION)'
+            repository: '$(DOCKER_BASE_REPO)'
+            imageSource: 'imagetag'
+            imageTag: '$(DOCKER_BASE_IMAGE_TAG)'
+
+        - task: InstallSSHKey@0
+          inputs:
+            knownHostsEntry: <secret this will need to be updated>
+            sshKeySecureFile: 'id_rsa'
+
+        - bash: |
+            mv or-core-julia-registry $(workingDirectory)
+          displayName: "Prepare file system"
+          name: prepareDirectory
+          workingDirectory: $(Build.SourcesDirectory)
+
+        - bash: |
+            echo $SSH_AUTH_SOCK
+            ssh-add -L
+            default=$SSH_AUTH_SOCK
+            IMAGE_TAG=$(grep version Project.toml | sed 's/version//g;s/"//g;s/ //g;s/=//g')
+            DOCKER_BUILDKIT=1 docker build . -t $(IMAGE_NAME):$IMAGE_TAG --ssh default
+            id=$(docker create $(IMAGE_NAME):$IMAGE_TAG)
+            mkdir -p pkg
+            docker cp $id:/app/JuliaAppTemplate.so ./pkg/JuliaAppTemplate.so
+            docker cp $id:/app/Manifest.toml ./pkg/Manifest.toml
+            docker rm -v $id
+            echo $IMAGE_TAG >> pkg/versioninfo.txt
+            echo "##vso[task.setvariable variable=IMAGE_TAG;isOutput=true]$IMAGE_TAG"
+          displayName: "Build Artifacts"
+          name: buildArtifacts
+          workingDirectory: $(workingDirectory)
+
+        - task: UniversalPackages@0
+          continueOnError: true
+          displayName: Publish the system image to Azure
+          inputs:
+            command: publish
+            publishDirectory: $(workingDirectory)/pkg
+            vstsFeedPublish: $(System.TeamProject)/$(artifactFeed)
+            vstsFeedPackagePublish: julia-app-template
+            versionOption: custom
+            versionPublish: $(buildArtifacts.IMAGE_TAG)$(Build.BuildId)
+
+  - stage: BuildImage
+    displayName: "Build image"
+    dependsOn: 'Build'
+    jobs:
+    - job: buildDockerImage
+      displayName: "Build the docker image"
+      variables:
+        IMAGE_TAG: $[ stageDependencies.Build.buildArtifacts.outputs['buildArtifacts.IMAGE_TAG'] ]
+      steps:
+        - checkout: self
+        - checkout: or-core-julia-registry
+        - checkout: or-sdk
+
+        - task: ECRPullImage@1
+          displayName: "Pull secured base image"
+          inputs:
+            awsCredentials: '$(SERVICE_CONNECTION)'
+            regionName: '$(AWS_REGION)'
+            repository: '$(DOCKER_BASE_REPO)'
+            imageSource: 'imagetag'
+            imageTag: '$(DOCKER_BASE_IMAGE_TAG)'
+
+        - task: InstallSSHKey@0
+          inputs:
+            knownHostsEntry: <secret, this will need to be update>
+            sshKeySecureFile: 'id_rsa'
+
+        - bash: |
+            mv or-core-julia-registry $(workingDirectory)
+          displayName: "Prepare file system"
+          name: prepareDirectory
+          workingDirectory: $(Build.SourcesDirectory)
+
+        - task: UniversalPackages@0
+          displayName: Download Julia system image from Azure
+          inputs:
+            command: download
+            vstsFeed: $(System.TeamProject)/$(artifactFeed)
+            vstsFeedPackage: julia-app-template
+            vstsPackageVersion: $(IMAGE_TAG)$(Build.BuildId)
+            downloadDirectory: $(workingDirectory)
+
+        - bash: |
+            cd $(workingDirectory)
+            echo $SSH_AUTH_SOCK
+            ssh-add -L
+            default=$SSH_AUTH_SOCK
+            DOCKER_BUILDKIT=1 docker build . -t $(IMAGE_NAME):$(IMAGE_TAG) --build-arg OPTION=ALREADY_BUILT --ssh default
+            echo Image name: $(IMAGE_NAME)
+            echo Image tag: $(IMAGE_TAG)
+          displayName: "Build"
+          name: build
+          workingDirectory: $(Build.SourcesDirectory)
+
+        - bash: |
+            ls -R
+          displayName: "Print out sources directory"
+          name: "printSourcesDirectory"
+          workingDirectory: $(Build.SourcesDirectory)
+
+        - bash: |
+            ls -R
+          displayName: "Print out working directory ie: the application checkout folder"
+          name: "printWorkingDirectory"
+          workingDirectory: $(workingDirectory)
+
+        - bash: |
+            echo $(IMAGE_NAME)
+            echo $(IMAGE_TAG)
+          displayName: "Verify variables"
+
+        # - task: prisma-cloud-compute-scan@3
+        #   inputs:
+        #     scanType: 'images'
+        #     twistlockService: 'Prisma Compute Image Scan'
+        #     artifact: '$(IMAGE_NAME):$(IMAGE_TAG)'
+        #   displayName: "Prisma scan"
+        #   name: scan
+
+        - bash: |
+            docker save $(IMAGE_NAME):$(IMAGE_TAG) > $(IMAGE_NAME):$(IMAGE_TAG).tar
+          displayName: "Save docker image"
+          name: save
+          workingDirectory: $(workingDirectory)
+
+        - task: PublishPipelineArtifact@1
+          inputs:
+            targetPath: '$(workingDirectory)'
+            artifact: 'build_artifacts'
+            publishLocation: 'pipeline'
+          displayName: "Publish docker image"
+          name: publish
+
+  - stage: DeployDev
+    displayName: 'Deploy dev'
+    dependsOn:
+      - 'Build'
+      - 'BuildImage'
+    jobs:
+        - deployment: 'dev'
+          displayName: 'Deploy Dev'
+          pool:
+              vmImage: ubuntu-latest
+          environment: 'dev'
+          variables:
+            IMAGE_TAG: $[ stageDependencies.Build.buildArtifacts.outputs['buildArtifacts.IMAGE_TAG'] ]
+          strategy:
+            runOnce:
+                deploy:
+                  steps:
+                    - bash: |
+                        echo $(IMAGE_NAME)
+                        echo $(IMAGE_TAG)
+                      displayName: "Verify variables"
+
+                    - task: DownloadBuildArtifacts@1
+                      inputs:
+                        buildType: 'current'
+                        downloadType: 'single'
+                        artifactName: 'build_artifacts'
+                        downloadPath: '$(System.DefaultWorkingDirectory)'
+
+                    - bash: |
+                        ls -la
+                        docker load < $(IMAGE_NAME):$(IMAGE_TAG).tar
+                        docker images
+                      displayName: "Load docker image"
+                      name: loadDockerImage
+                      workingDirectory: $(System.DefaultWorkingDirectory)
+
+                    - task: ECRPushImage@1
+                      continueOnError: true
+                      inputs:
+                        awsCredentials: '$(SERVICE_CONNECTION)'
+                        regionName: 'ap-southeast-2'
+                        imageSource: 'imagename'
+                        sourceImageName: '$(IMAGE_NAME)'
+                        sourceImageTag: $(IMAGE_TAG)
+                        repositoryName: '$(IMAGE_NAME)'
+                        pushTag: $(IMAGE_TAG)
+                        autoCreateRepository: false
+
+                    - template: ../../azure_devops_templates/auto-open-pr.yaml
+                      parameters:
+                        targetRefName: main
+                        environmentFolder: dev
+                        streamIdentifier: 1
+                        targetImage: julia_app_template
+                        newImageTag: $(IMAGE_TAG)
+                        sourceEnvironmentBranch: env/dev
+
+        - job: Notify_Teams
+          condition: and(succeeded(), eq(variables.isMain, 'true'), ne( dependencies.dev.outputs['dev.UpdateStreamVersionFile.previousTag'], dependencies.dev.outputs['dev.UpdateStreamVersionFile.newTag']))
+          dependsOn: dev
+          displayName: Notify Teams
+          variables:
+            previousTag: $[ dependencies.dev.outputs['dev.UpdateStreamVersionFile.previousTag'] ]
+            newTag: $[ dependencies.dev.outputs['dev.UpdateStreamVersionFile.newTag'] ]
+          steps:
+            - checkout: none
+            - bash: |
+                echo $(previousTag)
+                echo $(newTag)
+              displayName: "Verify variables"
+            - template: ../../azure_devops_templates/update-teams.yaml
+              parameters:
+                summary: Automated Merge
+                title: Automated Merge
+                subtitle: "for image: $(workingDirectory)"
+                previousTag: $(previousTag)
+                newTag: $(newTag)
+                status: Merged to Infra Pipeline (build pending)
+                buildLink: "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+                # https://docs.microsoft.com/en-us/azure/devops/pipelines/process/deployment-jobs?view=azure-devops#support-for-output-variables
+
+  - stage: DeployTest
+    displayName: 'Deploy Test'
+    dependsOn:
+      - 'Build'
+      - 'BuildImage'
+      - 'DeployDev'
+    jobs:
+        - deployment: 'tst'
+          displayName: 'Deploy Test'
+          pool:
+              vmImage: ubuntu-latest
+          environment: 'tst'
+          variables:
+            IMAGE_TAG: $[ stageDependencies.Build.buildArtifacts.outputs['buildArtifacts.IMAGE_TAG'] ]
+          strategy:
+            runOnce:
+                deploy:
+                  steps:
+                    - bash: |
+                        echo $(IMAGE_NAME)
+                        echo $(IMAGE_TAG)
+                      displayName: "Verify variables"
+
+                    - template: ../../azure_devops_templates/auto-open-pr.yaml
+                      parameters:
+                        targetRefName: main
+                        environmentFolder: tst
+                        streamIdentifier: 1
+                        targetImage: julia_app_template
+                        newImageTag: $(IMAGE_TAG)
+                        sourceEnvironmentBranch: env/tst
+
+        - job: Notify_Teams
+          condition: and(succeeded(), eq(variables.isMain, 'true'), ne( dependencies.tst.outputs['tst.UpdateStreamVersionFile.previousTag'], dependencies.tst.outputs['tst.UpdateStreamVersionFile.newTag']))
+          dependsOn: tst
+          displayName: Notify Teams
+          variables:
+            previousTag: $[ dependencies.tst.outputs['tst.UpdateStreamVersionFile.previousTag'] ]
+            newTag: $[ dependencies.tst.outputs['tst.UpdateStreamVersionFile.newTag'] ]
+          steps:
+            - checkout: none
+            - bash: |
+                echo $(previousTag)
+                echo $(newTag)
+              displayName: "Verify variables"
+            - template: ../../azure_devops_templates/update-teams.yaml
+              parameters:
+                summary: Automated Merge
+                title: Automated Merge
+                subtitle: "for image: $(workingDirectory)"
+                previousTag: $(previousTag)
+                newTag: $(newTag)
+                status: Merged to Infra Pipeline (build pending)
+                buildLink: "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+                # https://docs.microsoft.com/en-us/azure/devops/pipelines/process/deployment-jobs?view=azure-devops#support-for-output-variables

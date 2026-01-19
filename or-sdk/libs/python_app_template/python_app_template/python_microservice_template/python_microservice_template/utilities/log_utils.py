@@ -1,0 +1,78 @@
+#
+# ###############################################################################################
+#
+# This software is part of Deloitte’s Optimal Reality Digital Twin.
+# Copyright (C) 2020, Deloitte Australia. All rights reserved.
+# Created Date: 30/06/2020
+# Technical Authority: Caleb Sawade
+# Engagement Owner: Sean McClowry smcclowry@deloitte.com.au
+#                   and Kellie Nuttall knuttall@deloitte.com.au
+#
+# ###############################################################################################
+#
+# Copyright (C) 2020, Deloitte Digital. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# * Neither the name of the copyright holder nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+"""
+Logging utilities.
+"""
+import os
+import logging.config
+import logging
+import pathlib
+import yaml
+import coloredlogs
+from python_microservice_template.utilities.decorators import run_once
+
+
+@run_once
+def setup_logging(default_level=logging.INFO):
+    """
+    Reads the yaml file and configures the logging library.
+    """
+    current_dir = pathlib.Path(__file__).parent
+    path = str(current_dir) + "/logging.yaml"
+    if os.path.exists(path):
+        with open(path, 'rt') as f:
+            try:
+                config = yaml.safe_load(f.read())
+                logging.config.dictConfig(config)
+            except (yaml.scanner.ScannerError, FileNotFoundError):
+                print('Error in Logging Configuration. Using default configs')
+                logging.basicConfig(level=default_level)
+    else:
+        logging.basicConfig(level=default_level)
+        coloredlogs.install(level=default_level)
+        print('Failed to load configuration file. Using default configs')
+
+
+def get_logger(name):
+    """
+    Get a logger object.
+    """
+    setup_logging()
+    return logging.getLogger(name)

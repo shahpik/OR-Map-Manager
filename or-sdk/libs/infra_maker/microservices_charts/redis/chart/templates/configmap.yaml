@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-configmap
+data:
+  redis.conf: |-
+    protected-mode no
+    io-threads 4
+    io-threads-do-reads yes
+    notify-keyspace-events Kgs

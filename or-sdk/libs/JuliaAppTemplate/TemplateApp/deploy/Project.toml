@@ -1,0 +1,8 @@
+[deps]
+JuliaAppTemplate = "6fa53949-e430-4283-81b1-772b89d08149"
+PackageCompiler = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
+TestEnv = "1e6cf692-eddd-4d53-88a5-2d735e33781b"
+
+[compat]
+PackageCompiler = "1.7.0"
+TestEnv = "1.4"

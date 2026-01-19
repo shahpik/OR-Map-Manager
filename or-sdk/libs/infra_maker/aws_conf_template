@@ -1,0 +1,33 @@
+#========Account Parameters======== 
+TEMPLATE_ACCOUNT_ID = 438954004210
+TEMPLATE_ADMIN_ROLE = arn:aws:iam::438954004210:role/trusting-administratoraccess-role
+TEMPLATE_ADMIN_USERNAME = trusting-administratoraccess-role
+TEMPLATE_KMS_KEY_ID = arn:aws:kms:ap-southeast-2:438954004210:key/1d18a4d9-f831-4549-b75b-bc2457346d6a
+TEMPLATE_BASTION_KEY_NAME = asa-atm-test-key
+TEMPLATE_MASTER_JWT_TOKEN = 06ef51e77eb04ff6a30a6d831aab1d81
+TEMPLATE_OR_POC_DATA_S3_BUCKET = or-dot-poc-data 
+TEMPLATE_DELOITTE_PERMISSIONS_BOUNDARY_POLICY = arn:aws:iam::438954004210:policy/DeloittePermissionsBoundaryPolicy
+TEMPLATE_OIDC_PROVIDER_ARN = arn:aws:iam::438954004210:oidc-provider/oidc.eks.ap-southeast-2.amazonaws.com/id/2E864B9D160EF5CFD5493B162D1A8229
+
+#========Local AWS Profile Name========
+TEMPLATE_PROFILE = deploy_replication
+
+#========Region parameters (if we are doing US Client this might change)========
+TEMPLATE_REGION_NAME = ap-southeast-2
+TEMPLATE_RDS_AVAILABILITY_ZONE = ap-southeast-2a
+TEMPLATE_REGION_AMI = ami-04fcc97b5f6edcd89
+
+#========Machines we are using - this will drive the costs========
+TEMPLATE_BASTION_INSTANCE_TYPE = t3.medium
+TEMPLATE_EKS_CLUSTER_INSTANCE_TYPE = m5.4xlarge
+TEMPLATE_RDS_INSTANCE_CLASS = db.t3.large
+
+#========Passwords for RDS - CHANGE ALWAYS========
+TEMPLATE_SSM_RDS_PASSWORD_VALUE = MyLongSecurePassword!
+TEMPLATE_SSM_RDS_MASTER_PASSWORD_VALUE = MyLongSecurePassword!
+
+#========Parameters that need not change========
+TEMPLATE_SSM_RDS_USERNAME_VALUE = pgadmin
+TEMPLATE_RDS_NAME = optimalreality
+
+

@@ -1,0 +1,23 @@
+name = "JuliaAppTemplate"
+uuid = "6fa53949-e430-4283-81b1-772b89d08149"
+version = "0.1.0"
+
+[deps]
+EMInterface = "061c9052-acbb-4bf8-bcde-d3e6d631465d"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+ThreadPools = "b189fb0b-2eb5-4ed4-bc0c-d34c51242431"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[compat]
+EMInterface = "0.5.0"
+HTTP = "0.8, 0.9"
+JSON3 = "1.0.0"
+ThreadPools = "2.0.0"
+
+# = These dependencies are for OR microservices, and are not used by Julia
+[servicedeps.keydeps]
+
+[servicedeps.optional]

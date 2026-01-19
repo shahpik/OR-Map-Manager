@@ -1,0 +1,1 @@
+gql-interface>=0.3.0

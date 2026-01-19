@@ -1,0 +1,6 @@
+name = "Tile38Interface"
+uuid = "784a15c7-0c61-4970-ad70-3d0ba88eebd0"
+version = "0.9.1"
+
+[deps]
+JedisCluster = "36861dc4-8e8b-496b-9b63-00892eaa03fb"

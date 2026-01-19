@@ -1,0 +1,62 @@
+
+# the default agent pool
+pool:
+  vmImage: ubuntu-latest
+
+# global variables
+variables:
+  artifactFeed: or-core-model
+  buildUrl: $(System.TeamFoundationCollectionUri)/$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=results
+  workingDirectory: libs/python_app_template
+
+parameters:
+- name: buildOnBranch
+  displayName: Build on specific branch
+  type: string
+  default: 'refs/heads/master'
+
+# triggers - use these in combination with conditions to control the workflow
+trigger:
+  paths:
+    include:
+      - libs/python_app_template/*
+    exclude:
+      - libs/python_app_template/*.md
+      - libs/python_app_template/.gitignore
+      - libs/python_app_template/Makefile
+      - libs/python_app_template/azure-pipelines.yaml
+
+# the jobs to run - each distinct job may end up on a different agent
+jobs:
+  - job: buildAndPublishPackage
+    displayName: Publish Package
+    condition: eq(variables['Build.SourceBranch'], '${{ parameters.buildOnBranch }}')
+    pool: Air Services
+    steps:
+      - task: Bash@3
+        displayName: Build the Package
+        inputs:
+          script: |
+            make build
+          targetType: inline
+          workingDirectory: $(workingDirectory)
+      - task: TwineAuthenticate@1
+        displayName: Authenticate to Azure Artifacts
+        inputs:
+          artifactFeed: $(System.TeamProject)/$(artifactFeed)
+      - task: Bash@3
+        displayName: Copy Twine config into $(workingDirectory)
+        inputs:
+          script: |
+            cp $(PYPIRC_PATH) .pypirc
+          targetType: inline
+          workingDirectory: $(workingDirectory)
+      - task: Bash@3
+        displayName: Publish the Package to Azure Artifacts
+        env:
+          DOCKER_ENV_REPOSITORY: $(artifactFeed)
+        inputs:
+          script: |
+            make publish
+          targetType: inline
+          workingDirectory: $(workingDirectory)

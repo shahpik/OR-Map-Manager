@@ -1,0 +1,4 @@
+module AppTypes
+
+
+end # module

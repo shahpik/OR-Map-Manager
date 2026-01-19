@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rt-manager-service.name" . }}
+  labels:
+    {{- include "rt-manager-service.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 5090
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "rt-manager-service.selectorLabels" . | nindent 4 }}

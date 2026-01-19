@@ -1,0 +1,14 @@
+experimentName: "ExampleConfig"
+simDuration: 300
+solMajorTimestep: 300
+scheduleGenerationPeriod: 300
+
+agentConfigurations:
+ -
+    envSupport: "osm_map.osm"
+    agentType: "CAR"
+    scheduleGenerationParams:
+      mapName: "ILikeMaps.osm"
+      inProgressProportionThreshold: 0.2
+ -
+    nAgents: 12

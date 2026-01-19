@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "session-manager-service.name" . }}
+  labels:
+    {{- include "session-manager-service.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.app.port }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "session-manager-service.selectorLabels" . | nindent 4 }}

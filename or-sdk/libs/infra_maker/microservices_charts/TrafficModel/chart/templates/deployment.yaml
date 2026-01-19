@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "traffic-model-service.fullname" . }}
+  labels:
+    {{- include "traffic-model-service.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "traffic-model-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "traffic-model-service.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "traffic-model-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+          - name: EXPERIMENT_MANAGER_ENDPOINT
+            value: http://graphql-service.{{ .Release.Namespace }}
+          - name: EXPERIMENT_MANAGER_WS_ENDPOINT
+            value: ws://graphql-service.{{ .Release.Namespace }}
+          - name: APP_PORT
+            value: {{ .Values.app.port | quote }}
+          - name: LOG_LEVEL
+            value: {{ .Values.optimalReality.logLevel }}
+          - name: PG_ENDPOINT
+            value: {{ .Values.postgresqlSimulation.endpoint }}
+          - name: PG_DBNAME
+            value: {{ .Values.postgresqlSimulation.database }}
+          - name: PG_USER
+            value: {{ .Values.postgresqlSimulation.username }}
+          - name: PG_PASSWORD
+            value: {{ .Values.postgresqlSimulation.password }}
+          - name: REDIS_ENDPOINT
+            value: {{ .Values.redis.endpoint }}
+          - name: JULIA_NUM_THREADS
+            value: {{ .Values.app.juliaThreads | quote }}
+          - name: OR_MASTER_JWT
+            value: {{ .Values.experimentManager.masterJWT }}
+          - name: AWS_ACCESS_KEY_ID
+            value: {{ .Values.tpoc.aws_access_key_id }}
+          - name: AWS_SECRET_ACCESS_KEY
+            value: {{ .Values.tpoc.aws_secret_access_key }}
+          - name: AWS_REGION
+            value: {{ .Values.tpoc.aws_region }}
+          - name: AWS_S3_BUCKET
+            value: {{ .Values.tpoc.aws_s3_bucket }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.app.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: {{ .Values.app.port }}
+            failureThreshold: 10
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.app.port }}
+            failureThreshold: 10
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

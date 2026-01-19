@@ -1,0 +1,322 @@
+##
+## ###############################################################################################
+##
+## This software is part of Deloitte’s Optimal Reality Digital Twin.
+## Copyright (C) 2020, Deloitte Australia. All rights reserved.
+## Created Date: 30/06/2020
+## Technical Authority: Caleb Sawade
+## Engagement Owner: Sean McClowry smcclowry@deloitte.com.au
+##                   and Kellie Nuttall knuttall@deloitte.com.au
+##
+## ###############################################################################################
+##
+## Copyright (C) 2020, Deloitte Digital. All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+## list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+## this list of conditions and the following disclaimer in the documentation
+## and/or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its contributors
+## may be used to endorse or promote products derived from this software without
+## specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+## DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+## SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+## CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+## OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##
+
+# the default agent pool
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  repositories:
+    - repository: or-julia-registry
+      type: git
+      name: Optimal-Reality/or-julia-registry
+    - repository: or-sdk
+      type: git
+      name: Optimal-Reality/or-sdk
+    - repository: terraform
+      type: git
+      name: Optimal-Reality/env-or-client-dot-terraform
+    - repository: pipeline-util
+      type: git
+      name: Optimal-Reality-DOT/or-dot-pipeline-util
+
+# global variables
+variables:
+  APP_NAME: map-matcher
+  artifactFeed: or-core-model-v2
+  buildUrl: $(System.TeamFoundationCollectionUri)/$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=results
+  workingDirectory: $(Build.SourcesDirectory)/or-core/microservices/MapMatcher
+  client: dot
+  IMAGE_NAME: or-cmp-map-matcher-service-images
+  BUILD_TAG: $(Build.BuildId)
+  SERVICE_CONNECTION: or-mgt-admin
+  isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  AWS_REGION: ap-southeast-2
+  DOCKER_BASE_REPO: or-cmp-base-alpine-julia
+  DOCKER_BASE_IMAGE_TAG: 1.6.2-87182
+
+  manifestArtifactName: manifestJson
+  manifestJsonFile: manifest.json
+  manifestJsonPath: $(Build.SourcesDirectory)/${{ variables.manifestArtifactName }}
+  organisation: $(System.CollectionUri)
+  project: $(System.TeamProject)
+  upstreamPipeline: or-alpine-base-julia
+  upstreamBaseEcr: 558662781408.dkr.ecr.ap-southeast-2.amazonaws.com
+  upstreamBaseRepo: or-cmp-base-alpine-julia
+  upstreamBaseImageTagPrefix: 1.6-alpine
+  PRISMA_VARIABLE_GROUP: prisma-credentials
+
+# triggers - use these in combination with conditions to control the workflow
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - microservices/MapMatcher/*
+    exclude:
+      - microservices/MapMatcher/*.md
+      - microservices/MapMatcher/.gitignore
+      - microservices/MapMatcher/Makefile
+
+stages:
+  - stage: Extract
+    jobs:
+    - job: getArtifactValues
+      condition: and(succeeded(), eq(variables.isMain, 'true'))
+      steps:
+        - task: Bash@3
+          name: extractAndExportPipelineId
+          inputs:
+            script: |
+              set -e
+              pipelineId=$(az pipelines show --org ${{ variables.organisation }} --project ${{ variables.project }} --name ${{ variables.upstreamPipeline }} | jq -r '.id')
+              echo "##vso[task.setvariable variable=pipelineId;isOutput=true]$pipelineId"
+            targetType: inline
+            failOnStdErr: true
+            workingDirectory: $(Build.SourcesDirectory)
+          env:
+            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+        - task: DownloadPipelineArtifact@2
+          inputs:
+             source: specific
+             project: ${{ variables.project }}
+             pipeline: $(extractAndExportPipelineId.pipelineId)
+             artifact: ${{ variables.manifestArtifactName }}
+             path: ${{ variables.manifestJsonPath }}
+             runVersion: latest
+             runBranch: refs/head/main
+
+        - task: Bash@3
+          name: extractAndExportUpstreamBuildNumber
+          inputs:
+            script: |
+              set -e
+              manifestJsonFile=$(cat ${{ variables.manifestArtifactName }}/${{ variables.manifestJsonFile }})
+
+              echo $manifestJsonFile
+              upstreamBuildNumber=$(jq -r '.buildNumber' <<< $manifestJsonFile)
+              echo $upstreamBuildNumber
+              echo "##vso[task.setvariable variable=upstreamBuildNumber;isOutput=true]$upstreamBuildNumber"
+            targetType: inline
+            failOnStdErr: true
+            workingDirectory: $(Build.SourcesDirectory)
+
+  - stage: Build
+    displayName: "Build artifacts"
+    dependsOn:
+      - 'Extract'
+    variables:
+      UPSTREAM_BUILD_NUMBER: $[ stageDependencies.Extract.getArtifactValues.outputs['extractAndExportUpstreamBuildNumber.upstreamBuildNumber'] ]
+      UPSTREAM_IMAGE_TAG: "${{ variables.upstreamBaseImageTagPrefix }}-$(UPSTREAM_BUILD_NUMBER)"
+      UPSTREAM_IMAGE: "${{ variables.upstreamBaseEcr }}/${{ variables.upstreamBaseRepo }}:$(UPSTREAM_IMAGE_TAG)"
+    jobs:
+    - job: buildArtifacts
+      displayName: "Build Artifacts"
+      condition: and(succeeded(), eq(variables.isMain, 'true'))
+      steps:
+        - checkout: self
+        - checkout: or-julia-registry
+        - checkout: or-sdk
+
+        - task: ECRPullImage@1
+          displayName: "Pull secured base image"
+          inputs:
+            awsCredentials: '$(SERVICE_CONNECTION)'
+            regionName: '$(AWS_REGION)'
+            repository: ${{ variables.upstreamBaseRepo }}
+            imageSource: 'imagetag'
+            imageTag: $(UPSTREAM_IMAGE_TAG)
+
+        - bash: |
+            mv or-julia-registry $(workingDirectory)
+          displayName: "Prepare file system"
+          name: prepareDirectory
+          workingDirectory: $(Build.SourcesDirectory)
+
+        - bash: |
+            set -e
+            ls -la
+            IMAGE_TAG=$(grep version Project.toml | sed 's/version//g;s/"//g;s/ //g;s/=//g')
+            DOCKER_BUILDKIT=1 docker build --build-arg SYSTEM_ACCESSTOKEN="$SYSTEM_ACCESSTOKEN" --build-arg UPSTREAM_IMAGE="$(UPSTREAM_IMAGE)" -t $(IMAGE_NAME):$IMAGE_TAG .
+            id=$(docker create $(IMAGE_NAME):$IMAGE_TAG)
+            mkdir -p pkg
+            docker cp $id:/app/MapMatcher.so ./pkg/MapMatcher.so
+            docker cp $id:/app/Manifest.toml ./pkg/Manifest.toml
+            docker rm -v $id
+            echo $IMAGE_TAG >> pkg/versioninfo.txt
+            echo "##vso[task.setvariable variable=IMAGE_TAG;isOutput=true]$IMAGE_TAG"
+          displayName: "Build Artifacts"
+          name: buildArtifacts
+          workingDirectory: $(workingDirectory)
+          env:
+            SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+        - task: UniversalPackages@0
+          continueOnError: true
+          displayName: Publish the system image to Azure
+          inputs:
+            command: publish
+            publishDirectory: $(workingDirectory)/pkg
+            vstsFeedPublish: $(System.TeamProject)/$(artifactFeed)
+            vstsFeedPackagePublish: map-matcher
+            versionOption: custom
+            versionPublish: $(buildArtifacts.IMAGE_TAG)
+
+  - stage: BuildImage
+    displayName: "Build image"
+    dependsOn:
+      - Extract
+      - 'Build'
+    variables:
+      UPSTREAM_BUILD_NUMBER: $[ stageDependencies.Extract.getArtifactValues.outputs['extractAndExportUpstreamBuildNumber.upstreamBuildNumber'] ]
+      UPSTREAM_IMAGE_TAG: "${{ variables.upstreamBaseImageTagPrefix }}-$(UPSTREAM_BUILD_NUMBER)"
+      UPSTREAM_IMAGE: "${{ variables.upstreamBaseEcr }}/${{ variables.upstreamBaseRepo }}:$(UPSTREAM_IMAGE_TAG)"
+    jobs:
+    - job: buildDockerImage
+      displayName: "Build the docker image"
+      variables:
+      - group: "${{ variables.PRISMA_VARIABLE_GROUP }}"
+      - name: IMAGE_TAG
+        value: $[ stageDependencies.Build.buildArtifacts.outputs['buildArtifacts.IMAGE_TAG'] ]
+      steps:
+        - checkout: self
+        - checkout: or-julia-registry
+        - checkout: or-sdk
+
+        - task: ECRPullImage@1
+          displayName: "Pull secured base image"
+          inputs:
+            awsCredentials: '$(SERVICE_CONNECTION)'
+            regionName: '$(AWS_REGION)'
+            repository: ${{ variables.upstreamBaseRepo }}
+            imageSource: 'imagetag'
+            imageTag: $(UPSTREAM_IMAGE_TAG)
+
+        - bash: |
+            mv or-julia-registry $(workingDirectory)
+          displayName: "Prepare file system"
+          name: prepareDirectory
+          workingDirectory: $(Build.SourcesDirectory)
+
+        - task: UniversalPackages@0
+          displayName: Download Julia system image from Azure
+          inputs:
+            command: download
+            vstsFeed: $(System.TeamProject)/$(artifactFeed)
+            vstsFeedPackage: map-matcher
+            vstsPackageVersion: $(IMAGE_TAG)
+            downloadDirectory: $(workingDirectory)
+
+        - bash: |
+            set -e 
+            cd $(workingDirectory)
+            DOCKER_BUILDKIT=1 docker build --build-arg SYSTEM_ACCESSTOKEN="$SYSTEM_ACCESSTOKEN" --build-arg UPSTREAM_IMAGE="$(UPSTREAM_IMAGE)" --build-arg OPTION=ALREADY_BUILT -t $(IMAGE_NAME):$IMAGE_TAG .
+            echo Image name: $(IMAGE_NAME)
+            echo Image tag: $(IMAGE_TAG)
+          displayName: "Build"
+          name: build
+          workingDirectory: $(Build.SourcesDirectory)
+          env:
+            SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+        - bash: |
+            ls -R
+          displayName: "Print out sources directory"
+          name: "printSourcesDirectory"
+          workingDirectory: $(Build.SourcesDirectory)
+
+        - bash: |
+            ls -R
+          displayName: "Print out working directory ie: the application checkout folder"
+          name: "printWorkingDirectory"
+          workingDirectory: $(workingDirectory)
+
+        - bash: |
+            echo $(IMAGE_NAME)
+            echo $(IMAGE_TAG)
+          displayName: "Verify variables"
+
+        # - template: templates/prisma_scan.yaml@pipeline-util
+        #   parameters:
+        #     prismaScanType: 'images'
+        #     image: '$(IMAGE_NAME):$(IMAGE_TAG)'
+        #     twistlockService: 'Prisma Compute Image Scan'
+        #     runScan: true
+
+        - bash: |
+            docker save $(IMAGE_NAME):$(IMAGE_TAG) > $(IMAGE_NAME):$(IMAGE_TAG).tar
+          displayName: "Save docker image"
+          name: save
+          workingDirectory: $(workingDirectory)
+
+        - task: PublishPipelineArtifact@1
+          inputs:
+            targetPath: '$(workingDirectory)'
+            artifact: 'build_artifacts'
+            publishLocation: 'pipeline'
+          displayName: "Publish docker image"
+          name: publish
+
+  - stage: PublishArtifacts
+    displayName: 'Publish Artifacts'
+    dependsOn:
+      - 'Build'
+      - 'BuildImage'
+    variables:
+      IMAGE_TAG: $[ stageDependencies.Build.buildArtifacts.outputs['buildArtifacts.IMAGE_TAG'] ]
+    jobs:
+      - template: templates/ecr_push.yaml@pipeline-util
+        parameters:
+          AWS_REGION: ${{ variables.AWS_REGION }}
+          APP_NAME: ${{ variables.APP_NAME }}
+          IMAGE_NAME: ${{ variables.IMAGE_NAME }}
+          IMAGE_TAG: $(IMAGE_TAG)
+          SERVICE_CONNECTION: ${{ variables.SERVICE_CONNECTION }}
+
+      - template: templates/publish_version_artifact.yaml@pipeline-util
+        parameters:
+          createVersionArtifact: true
+          dependsOn: ECRPush
+          APP_NAME: ${{ variables.APP_NAME }}
+          IMAGE_NAME: ${{ variables.IMAGE_NAME }}
+          IMAGE_TAG: $(IMAGE_TAG)
+

@@ -1,0 +1,87 @@
+replicaCount: 1
+
+image:
+  repository: graphql-service
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: TEMPLATE_EKS_ROLE
+  name: "graphql-service"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+  nodePort: null
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  hosts:
+  - host: graphql-TEMPLATE_CLIENT_ENV.optimalreality.com.au
+    paths:
+    - path: /
+  tls: []
+
+resources: 
+  limits:
+    cpu: 4000m
+    memory: 12288Mi
+  requests:
+    cpu: 1000m
+    memory: 4096Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+optimalReality:
+  logLevel: INFO
+
+experimentManager:
+  adminUsername: admin
+  adminUserSecret: 
+  adminPassword: 
+  masterJWT: 
+
+postgresql:
+  database: or_dot
+  endpoint: TEMPLATE_RDS_ENDPOINT
+  password: postgres
+  username: oradmin
+
+postgresqlSimulation:
+  database: ordb
+  endpoint: TEMPLATE_RDS_ENDPOINT
+  password: postgres
+  username: postgres
+
+redis:
+  endpoint: redis:6379
+
+tpoc:
+  aws_access_key_id:
+  aws_secret_access_key:
+  aws_region: 

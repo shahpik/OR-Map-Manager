@@ -1,0 +1,239 @@
+##
+## ###############################################################################################
+##
+## This software is part of Deloitte’s Optimal Reality Digital Twin.
+## Copyright (C) 2020, Deloitte Australia. All rights reserved.
+## Created Date: 30/06/2020
+## Technical Authority: Caleb Sawade
+## Engagement Owner: Sean McClowry smcclowry@deloitte.com.au
+##                   and Kellie Nuttall knuttall@deloitte.com.au
+##
+## ###############################################################################################
+##
+## Copyright (C) 2020, Deloitte Digital. All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+## list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+## this list of conditions and the following disclaimer in the documentation
+## and/or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its contributors
+## may be used to endorse or promote products derived from this software without
+## specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+## DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+## SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+## CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+## OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##
+
+# the default agent pool
+pool:
+  vmImage: ubuntu-latest
+
+# global variables
+variables:
+  artifactFeed: or-core-model
+  buildUrl: $(System.TeamFoundationCollectionUri)/$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=results
+  workingDirectory: microservices/JuliaAppTemplate
+
+# parameters are editable from the azure pipelines manual run
+parameters:
+- name: doDevStage
+  displayName: Run Dev Stage
+  type: boolean
+  default: true
+- name: doSITStage
+  displayName: Run SIT Stage
+  type: boolean
+  default: false
+- name: deployOnly
+  displayName: Deploy only
+  type: boolean
+  default: false
+
+# triggers - use these in combination with conditions to control the workflow
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - microservices/JuliaAppTemplate/*
+    exclude:
+      - microservices/JuliaAppTemplate/*.md
+      - microservices/JuliaAppTemplate/.gitignore
+      - microservices/JuliaAppTemplate/Makefile
+
+stages:
+- stage:
+  displayName: dev
+  condition: eq('${{ parameters.doDevStage }}', true)
+  # the jobs to run - each distinct job may end up on a different agent
+  jobs:
+    - job: testPackage
+      displayName: Test the Package
+      steps:
+        - task: Bash@3
+          displayName: Run the Unit Tests
+          inputs:
+            script: |
+              make unit-test
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+    - job: buildSysImage
+      displayName: Build the Julia system image
+      pool: Air Services
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), not(eq('${{ parameters.deployOnly }}', true)))
+      steps:
+        - task: Bash@3
+          displayName: Build the Julia system image
+          inputs:
+            script: |
+              make build-sysimage
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+        - task: Bash@3
+          displayName: Sets the Version (buildVersion)
+          inputs:
+            script: |
+              make version
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+        - task: UniversalPackages@0
+          displayName: Publish the system image to Azure
+          inputs:
+            command: publish
+            publishDirectory: $(workingDirectory)/pkg
+            vstsFeedPublish: $(System.TeamProject)/$(artifactFeed)
+            vstsFeedPackagePublish: julia-template-app
+            versionOption: custom
+            versionPublish: $(buildVersion)
+    - job: buildDockerImage
+      displayName: Build the docker image
+      pool: Air Services
+      dependsOn:
+      - buildSysImage
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), not(eq('${{ parameters.deployOnly }}', true)))
+      steps:
+        - task: Bash@3
+          displayName: Sets the Version (buildVersion)
+          inputs:
+            script: |
+              make version
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+        - task: UniversalPackages@0
+          displayName: Download Julia system image from Azure
+          inputs:
+            command: download
+            vstsFeed: $(System.TeamProject)/$(artifactFeed)
+            vstsFeedPackage: julia-template-app
+            vstsPackageVersion: $(buildVersion)
+            downloadDirectory: $(workingDirectory)
+        - task: Bash@3
+          displayName: Build the docker image
+          inputs:
+            script: |
+              make build
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+        - task: Bash@3
+          displayName: Login to ECR
+          inputs:
+            script: |
+              make docker-login
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+        - task: Bash@3
+          displayName: Publish the docker image to AWS ECR
+          inputs:
+            script: |
+              make publish
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+    - job: deployRelease
+      displayName: Deploy the Release to Dev
+      condition: or(and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main')), and(eq('${{ parameters.deployOnly }}', true), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
+      dependsOn:
+        - buildDockerImage
+      pool: Air Services
+      steps:
+        - task: Bash@3
+          displayName: Configure Kubeconfig
+          env:
+            ENVIRONMENT: dev
+            CLIENT: dot
+          inputs:
+            script: |
+              make update-kubeconfig
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+        - task: Bash@3
+          displayName: Deploy the Service
+          env:
+            ENVIRONMENT: dev
+            CLIENT: dot
+            NAMESPACE: dot-dev
+            STANDALONE: false
+          inputs:
+            script: |
+              make deploy
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+- stage:
+  displayName: SIT
+  condition: eq('${{ parameters.doSITStage }}', true)
+  jobs:
+    - job: deployRelease
+      displayName: Deploy the Release to SIT
+      pool: Air Services
+      steps:
+        - task: Bash@3
+          displayName: Configure Kubeconfig
+          env:
+            ENVIRONMENT: sit
+            CLIENT: dot
+          inputs:
+            script: |
+              make update-kubeconfig
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+        - task: Bash@3
+          displayName: Deploy the Service
+          env:
+            ENVIRONMENT: sit
+            CLIENT: dot
+            NAMESPACE: dot-sit
+            STANDALONE: false
+          inputs:
+            script: |
+              make deploy
+            targetType: inline
+            workingDirectory: $(workingDirectory)
+- stage:
+  displayName: cleanUp
+  condition: always()
+  jobs:
+    - job: cleanUp
+      displayName: Clean Up Build Agent
+      pool: Air Services
+      steps:
+        - task: Bash@3
+          displayName: Run Docker System Prune
+          inputs:
+            script: |
+              docker system prune --filter "until=1h" -a --force
+            targetType: inline
+            workingDirectory: $(workingDirectory)

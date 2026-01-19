@@ -1,0 +1,197 @@
+##
+## ###############################################################################################
+##
+## This software is part of Deloitte’s Optimal Reality Digital Twin.
+## Copyright (C) 2020, Deloitte Australia. All rights reserved.
+## Created Date: 30/06/2020
+## Technical Authority: Caleb Sawade
+## Engagement Owner: Sean McClowry smcclowry@deloitte.com.au
+##                   and Kellie Nuttall knuttall@deloitte.com.au
+##
+## ###############################################################################################
+##
+## Copyright (C) 2020, Deloitte Digital. All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+## list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+## this list of conditions and the following disclaimer in the documentation
+## and/or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its contributors
+## may be used to endorse or promote products derived from this software without
+## specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+## DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+## SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+## CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+## OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##
+#
+# validation microservice pipeline
+#
+
+# the default agent pool
+pool:
+  vmImage: ubuntu-latest
+
+# global variables
+variables:
+  coreArtifactFeed: or-core-model
+  buildUrl: $(System.TeamFoundationCollectionUri)/$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=results
+  workingDirectory: microservices/python_microservice_template
+
+# parameters are editable from the azure pipelines manual run
+# todo: if these function well the deploymentEnvironment variable is surplus
+parameters:
+- name: doNonprodStage
+  displayName: Run Nonprod Stage
+  type: boolean
+  default: true
+- name: doPreprodStage
+  displayName: Run Preprod Stage
+  type: boolean
+  default: false
+- name: buildOnBranch
+  displayName: Build on specific branch
+  type: string
+  default: 'refs/heads/jl-master'
+
+# triggers - use these in combination with conditions to control the workflow
+trigger:
+  paths:
+    include:
+    - microservices/python_microservice_template/*
+    exclude:
+    - microservices/python_microservice_template/*.md
+    - microservices/python_microservice_template/.gitignore
+    - microservices/python_microservice_template/chart/
+    - microservices/python_microservice_template/Makefile
+
+stages:
+- stage:
+  displayName: nonprod
+  condition: eq('${{ parameters.doNonprodStage }}', true)
+  # the jobs to run - each distinct job may end up on a different agent
+  jobs:
+  - job: buildRelease
+    displayName: Build the Release
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], '${{ parameters.buildOnBranch }}'), not(eq(variables['deployOnly'], 'true')))
+    pool: Air Services
+    steps:
+    - task: PipAuthenticate@1
+      displayName: Authenticate to Azure Artifacts
+      inputs:
+        artifactFeeds: $(System.TeamProject)/$(coreArtifactFeed)
+        onlyAddExtraIndex: true
+    - task: Bash@3
+      displayName: Build the Image
+      inputs:
+        script: |
+          make build
+        targetType: inline
+        workingDirectory: $(workingDirectory)
+    - task: Bash@3
+      displayName: Login to ECR
+      inputs:
+        script: |
+          make docker-login
+        targetType: inline
+        workingDirectory: $(workingDirectory)
+    - task: Bash@3
+      displayName: Publish the Image
+      inputs:
+        script: |
+          make publish
+        targetType: inline
+        workingDirectory: $(workingDirectory)
+    - task: Bash@3
+      displayName: Report the Image Scan Findings
+      env:
+        PYTHONIOENCODING: UTF-8
+      inputs:
+        script: |
+          make security-test
+        targetType: inline
+        workingDirectory: $(workingDirectory)
+  - job: deployRelease
+    displayName: Deploy the Release
+    condition: or(and(succeeded(), eq(variables['Build.SourceBranch'], '${{ parameters.buildOnBranch }}')), and(eq(variables['deployOnly'], 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/jl-master')))
+    dependsOn:
+    - buildRelease
+    pool: Air Services
+    steps:
+    - task: Bash@3
+      displayName: Configure Kubeconfig
+      env:
+        ENVIRONMENT: nonprod
+      inputs:
+        script: |
+          make update-kubeconfig
+        targetType: inline
+        workingDirectory: $(workingDirectory)
+    - task: Bash@3
+      displayName: Deploy the Service
+      env:
+        ENVIRONMENT: nonprod
+        NAMESPACE: nonprod
+        STANDALONE: false
+      inputs:
+        script: |
+          make deploy
+        targetType: inline
+        workingDirectory: $(workingDirectory)
+- stage:
+  displayName: preprod
+  condition: eq('${{ parameters.doPreprodStage }}', true)
+  jobs:
+  - job: deployRelease
+    displayName: Deploy the Release to preprod
+    pool: Air Services
+    steps:
+    - task: Bash@3
+      displayName: Configure Kubeconfig
+      env:
+        ENVIRONMENT: preprod
+      inputs:
+        script: |
+          make update-kubeconfig
+        targetType: inline
+        workingDirectory: $(workingDirectory)
+    - task: Bash@3
+      displayName: Deploy the Service
+      env:
+        ENVIRONMENT: preprod
+        NAMESPACE: preprod
+        STANDALONE: false
+      inputs:
+        script: |
+          make deploy
+        targetType: inline
+        workingDirectory: $(workingDirectory)
+- stage:
+  displayName: cleanUp
+  condition: always()
+  jobs:
+  - job: cleanUp
+    displayName: Clean Up Build Agent
+    condition: always()
+    pool: Air Services
+    steps:
+    - task: Bash@3
+      displayName: Run Docker System Prune
+      inputs:
+        script: |
+          docker system prune --filter "until=1h" -a --force
+        targetType: inline
+        workingDirectory: $(workingDirectory)

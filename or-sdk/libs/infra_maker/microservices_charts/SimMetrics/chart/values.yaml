@@ -1,0 +1,70 @@
+replicaCount: 1
+
+image:
+  repository: sim-metrics-service
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+
+app:
+  port: 6201
+  juliaThreads: 4
+
+resources:
+  limits:
+    cpu: 4000m
+    memory: 4096Mi
+  requests:
+    cpu: 1000m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 50
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+optimalReality:
+  logLevel: INFO
+
+postgresqlSimulation:
+  database: ordb
+  endpoint: TEMPLATE_RDS_ENDPOINT
+  password: postgres
+  username: postgres
+
+postgresql:
+  database: or_dot
+  endpoint: TEMPLATE_RDS_ENDPOINT
+  password: postgres
+  username: oradmin

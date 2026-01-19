@@ -1,0 +1,77 @@
+replicaCount: 1
+
+image:
+  repository: schedule-generation-service
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+
+app:
+  port: 5500
+  juliaThreads: 12
+
+resources:
+  limits:
+    cpu: 15000m
+    memory: 50000Mi
+  requests:
+    cpu: 1000m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 50
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+optimalReality:
+  logLevel: INFO
+
+postgresql:
+  database: or_dot
+  endpoint: TEMPLATE_RDS_ENDPOINT
+  password: postgres
+  username: oradmin
+
+postgresqlSimulation:
+  database: ordb
+  endpoint: TEMPLATE_RDS_ENDPOINT
+  password: postgres
+  username: postgres
+
+tpoc:
+  aws_access_key_id:
+  aws_secret_access_key:
+  aws_region: ap-southeast-2
+  aws_s3_bucket: TEMPLATE_OR_POC_DATA_S3_BUCKET

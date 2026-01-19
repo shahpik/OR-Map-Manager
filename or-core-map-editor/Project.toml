@@ -1,0 +1,43 @@
+name = "MapEditor"
+uuid = "ba53b0f3-668c-48a1-95b6-ba9cf89cb1e5"
+version = "0.1.55"
+
+[deps]
+AWSInterface = "139ef920-4e8b-49e0-bf19-87b39bb4e509"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+EMInterface = "061c9052-acbb-4bf8-bcde-d3e6d631465d"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+LibPQ = "194296ae-ab2e-5f79-8cd4-7183a0a5a0d1"
+LightOSM = "d1922b25-af4e-4ba3-84af-fe9bea896051"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+MbedTLS = "739be429-bea8-5141-9913-cc70e7f3736d"
+PSQLInterface = "67f03840-d431-4e10-a991-59e5ceeec220"
+Parsers = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+SpatialUtilities = "726cb4c5-e861-4241-94f3-971ecd944694"
+StructTypes = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+URIs = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
+UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
+
+[compat]
+AWSInterface = "0.2.0"
+CSV = "0.9.0"
+DataFrames = "1.0.0"
+EMInterface = "0.5.0"
+HTTP = "0.8, 0.9"
+JSON3 = "1.0.0"
+LightOSM = "0.3.0"
+PSQLInterface = "0.3.14"
+Parsers = "= 2.4.2"
+ProgressMeter = "1.7.2"
+SpatialUtilities = ">=0.7.5"
+
+[servicedeps.keydeps]
+
+[servicedeps.optional]

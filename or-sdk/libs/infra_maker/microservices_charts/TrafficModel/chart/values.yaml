@@ -1,0 +1,76 @@
+replicaCount: 1
+
+image:
+  repository: traffic-model-service
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+
+app:
+  port: 5001
+  juliaThreads: 4
+
+resources:
+  limits:
+    cpu: 12000m
+    memory: 16184Mi
+  requests:
+    cpu: 4000m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 50
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+optimalReality:
+  logLevel: INFO
+
+postgresqlSimulation:
+  database: ordb
+  endpoint: TEMPLATE_RDS_ENDPOINT
+  password: postgres
+  username: postgres
+
+redis:
+  endpoint: redis:6379
+
+tpoc:
+  aws_access_key_id:
+  aws_secret_access_key:
+  aws_region: ap-southeast-2
+  aws_s3_bucket: TEMPLATE_OR_POC_DATA_S3_BUCKET
+
+experimentManager:
+  masterJWT:

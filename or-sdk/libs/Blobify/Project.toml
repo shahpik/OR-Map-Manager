@@ -1,0 +1,21 @@
+name = "Blobify"
+uuid = "225478b9-cf96-4558-aa84-c67408e1191d"
+version = "0.2.3"
+
+[deps]
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+LightOSM = "d1922b25-af4e-4ba3-84af-fe9bea896051"
+Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+QuickHeaps = "30b38841-0f52-47f8-a5f8-18d5d4064379"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+ThreadPools = "b189fb0b-2eb5-4ed4-bc0c-d34c51242431"
+
+[compat]
+Graphs = "1.4.0"
+JSON3 = "1.8.2"
+LightOSM = "0.2.0"
+Parameters = "0.12.1"
+ThreadPools = "1.2.1"
+julia = "^1"

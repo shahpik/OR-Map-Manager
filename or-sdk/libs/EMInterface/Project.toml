@@ -1,0 +1,15 @@
+name = "EMInterface"
+uuid = "061c9052-acbb-4bf8-bcde-d3e6d631465d"
+authors = ["Mal Miller <malmiller@deloitte.com.au>"]
+version = "0.5.4"
+
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+GraphQLClient = "09d831e3-9c21-47a9-bfd8-076871817219"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+
+[compat]
+GraphQLClient = "0.7.4"
+JSON3 = "1.1.2"
+Requires = "1.1.3"

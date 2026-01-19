@@ -1,0 +1,48 @@
+# syntax=docker/dockerfile:experimental
+FROM julia:1.6.2-alpine3.14
+
+ARG OPTION=NONE
+
+# Try to boost precompilation speed
+ENV JULIA_NUM_THREADS=4
+
+
+RUN adduser -u 10000 -S runtime --home /runtime
+ENV JULIA_DEPOT_PATH=/runtime/.julia
+
+WORKDIR /app
+COPY . .
+
+RUN apk add --update --upgrade --no-cache gcc openssh netcat-openbsd zip unzip curl gnu-libiconv musl-dev postgresql-client proj-util
+# RUN apk add --update --upgrade --no-cache gcc openssh netcat-openbsd zip unzip curl gnu-libiconv musl-dev postgresql-client aws-cli
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN rm awscliv2.zip
+RUN ./aws/install
+
+RUN adduser -u 10000 -S runtime --home /runtime
+ENV JULIA_DEPOT_PATH=/runtime/.julia
+
+# Add or-core-julia-registry
+RUN mkdir -m 600 ~/.ssh && ssh-keyscan dvcs.deloittedigital.com.au >> ~/.ssh/known_hosts
+RUN --mount=type=ssh julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(RegistrySpec(url="ssh://git@dvcs.deloittedigital.com.au:22/core/or-core-julia-registry.git"))'
+
+ENV JULIA_PROJECT @.
+RUN --mount=type=ssh julia deploy/packagecompile.jl "$OPTION"
+RUN --mount=type=ssh julia -e 'using Pkg; Pkg.instantiate()'
+
+# change ownership and clear out test keys (using root user)
+RUN chown -R runtime /runtime/.julia/ && \
+  find /usr/local/julia/* -type f -regex '.*\/test\/keys\/.*' -delete && \
+  find /runtime/.julia/packages/* -type f -regex '.*\/test\/.*.pem' -delete && \
+  find /runtime/.julia/* -type f -regex '.*\/test\/.*.key' -delete && \
+  find /runtime/.julia/* -type f -regex '.*\/test\/keys\/.*' -delete && \
+  find /runtime/.julia/* -type f -regex '.*\/Jedis\/*.*\/redis.key' -delete
+
+RUN apk del gcc
+
+USER runtime
+
+EXPOSE 6702
+
+ENTRYPOINT ["julia", "-JMapMatcher.so", "-e", "MapMatcher.run()"]

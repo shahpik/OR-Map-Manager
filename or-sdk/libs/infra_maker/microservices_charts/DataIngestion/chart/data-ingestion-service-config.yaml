@@ -1,0 +1,18 @@
+data_ingestion_variables:
+    aws_s3_bucket_upload: #BUCKET/raw_network_volume_actuals
+    aws_s3_bucket: #BUCKET
+    api_save_rate: 900
+    api_poll_rate: 5
+    cctv_api_poll_rate: 20
+
+data_sources:
+    - endpoint: #endpoint 
+      startup_function: #function to run
+      mapping: #scats_intersection_mapping/scats_intersection_mapping.csv
+      source: #scats
+      input_type: #JSON
+      output_type: #csv
+      formatter: #function to format data correctly
+      headers_get:
+          Content-Type: #application/json
+

@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "graphql-service.fullname" . }}
+  labels:
+    {{- include "graphql-service.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "graphql-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "graphql-service.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "graphql-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+          - name: GRAPHQL_SCHEMA_COMPONENTS
+            value: {{ .Values.experimentManager.schemaComponents | toJson | quote }}
+          - name: AWS_REGION
+            value: {{ .Values.aws.region }}
+          - name: DELAY_MANAGEMENT_ENDPOINT
+            value: http://delay-management-service.{{ .Release.Namespace }}
+          - name: POSTGRESQL_DATABASE
+            value: {{ .Values.postgresql.database }}
+          - name: POSTGRESQL_ENDPOINT
+            value: {{ .Values.postgresql.endpoint }}
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "graphql-service.fullname" . }}
+                key: postgresql_password
+          - name: POSTGRESQL_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "graphql-service.fullname" . }}
+                key: postgresql_username
+          - name: POSTGRESQL_SIMULATION_DATABASE
+            value: {{ .Values.postgresqlSimulation.database }}
+          - name: POSTGRESQL_SIMULATION_ENDPOINT
+            value: {{ .Values.postgresqlSimulation.endpoint }}
+          - name: POSTGRESQL_SIMULATION_PASSWORD
+            value: {{ .Values.postgresqlSimulation.password }}
+          - name: POSTGRESQL_SIMULATION_USERNAME
+            value: {{ .Values.postgresqlSimulation.username }}
+          - name: SIMULATION_ENDPOINT
+            value: http://network-model-service.{{ .Release.Namespace }}
+          - name: VALIDATION_ENDPOINT
+            value: http://validation-service.{{ .Release.Namespace }}
+          - name: DATA_LOADER_ENDPOINT
+            value: http://data-loader-service.{{ .Release.Namespace }}
+          - name: DATA_RECORDER_ENDPOINT
+            value: http://data-recorder-service.{{ .Release.Namespace }}
+          - name: METRICS_ENDPOINT
+            value: http://metrics-service.{{ .Release.Namespace }}
+          - name: SIM_METRICS_ENDPOINT
+            value: http://sim-metrics-service.{{ .Release.Namespace }}
+          - name: SPATIAL_ENDPOINT
+            value: http://spatial-service.{{ .Release.Namespace }}
+          - name: SESSION_MANAGER_ENDPOINT
+            value: http://session-manager-service.{{ .Release.Namespace }}
+          - name: REDIS_ENDPOINT
+            value: {{ .Values.redis.endpoint }}
+          - name: TRAFFIC_MODEL_ENDPOINT
+            value: http://traffic-model-service.{{ .Release.Namespace }}
+          - name: SCHEDULE_GENERATION_ENDPOINT
+            value: http://schedule-generation-service.{{ .Release.Namespace }}
+          - name: TPOC_AWS_ACCESS_KEY_ID
+            value: {{ .Values.tpoc.aws_access_key_id }}
+          - name: TPOC_AWS_SECRET_ACCESS_KEY
+            value: {{ .Values.tpoc.aws_secret_access_key }}
+          - name: TPOC_AWS_REGION
+            value: {{ .Values.tpoc.aws_region }}
+{{- if .Values.optimalReality.dynamodbTablePrefix }}
+          - name: DYNAMODB_TABLE_PREFIX
+            value: {{ .Values.optimalReality.dynamodbTablePrefix }}
+{{- end }}
+{{- if .Values.aws.accessKeyId }}
+          - name: AWS_ACCESS_KEY_ID
+            value: {{ .Values.aws.accessKeyId }}
+{{- end }}
+{{- if .Values.aws.secretAccessKey }}
+          - name: AWS_SECRET_ACCESS_KEY
+            value: {{ .Values.aws.secretAccessKey }}
+{{- end }}
+{{- if .Values.aws.dynamodbEndpoint }}
+          - name: DYNAMODB_ENDPOINT
+            value: {{ .Values.aws.dynamodbEndpoint }}
+{{- end }}
+          - name: OR_ADMIN_USERNAME
+            value: {{ .Values.experimentManager.adminUsername }}
+          - name: OR_ADMIN_USER_SECRET
+            value: {{ .Values.experimentManager.adminUserSecret }}
+          - name: OR_ADMIN_PASSWORD
+            value: {{ .Values.experimentManager.adminPassword }}
+          - name: OR_MASTER_JWT
+            value: {{ .Values.experimentManager.masterJWT }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+          - containerPort: 5100
+            protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 5100
+            failureThreshold: 10
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5100
+            failureThreshold: 10
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

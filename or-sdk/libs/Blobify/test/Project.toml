@@ -1,0 +1,7 @@
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+LightOSM = "d1922b25-af4e-4ba3-84af-fe9bea896051"
+
+[compat]
+
+LightOSM = "0.2.0"

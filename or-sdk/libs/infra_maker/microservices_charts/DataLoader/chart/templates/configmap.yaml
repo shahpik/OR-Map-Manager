@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: data-loader-service-configmap
+data:
+  {{- (.Files.Glob "data-loader-service-config.yaml").AsConfig | nindent 2 }}

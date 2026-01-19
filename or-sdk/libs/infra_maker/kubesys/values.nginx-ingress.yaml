@@ -1,0 +1,19 @@
+controller:
+  # publishService required to Allow ELB Alias for DNS registration w/ external-dns
+  publishService:
+    enabled: true
+  tcp:
+    configNameSpace: $(POD_NAMESPACE)/tcp-services
+  # udp:
+  #   configNameSpace: $(POD_NAMESPACE)/udp-services
+  service:
+    # AWS Annotations for LoadBalaner with Certificate ARN
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ap-southeast-2:438954004210:certificate/6886a212-6dbf-4bb9-b6ce-bd57f345d67b"
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
+      # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    # TLS (https) terminated at ELB, so internal endpoint is 'http'
+    targetPorts:
+      https: http
